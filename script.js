@@ -184,7 +184,10 @@ function render() {
                 };
             } else if (mouse.drawingGate) {
                 if (gateArray.filter(e => detectCollision(e.x, e.y, 25, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, 50)).length == 0) {
-                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 25, 50);
+                    let tableInputs = Object.keys(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
+                    let tableOutputs = Object.values(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
+
+                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
                     if (mouse.down) {
                         mouse.down = false;
                         gateArray.push(new Gate(mouse.x - 25 / 2, mouse.y - 50 / 2, mouse.drawingGate));
