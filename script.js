@@ -14,7 +14,8 @@ var mouse = {
     drawingWireFrom: undefined,
     drawingGate: undefined,
     isRemoving: false,
-    isMoving: undefined
+    isMoving: undefined,
+    stepArray: []
 };
 
 window.addEventListener("resize", resize);
@@ -186,9 +187,15 @@ function render() {
     c.fillRect(0, 0, canvas.width, 50)
     if (mouse.y > 75 && mouse.isMoving == undefined) {
         if (mouse.drawingWireFrom) {
+            if(mouse.down){
+                mouse.stepArray.push({x:mouse.x,y:mouse.y})
+            };
             c.lineWidth = 5;
             c.beginPath();
             c.moveTo(mouse.drawingWireFrom.x + 12.5, mouse.drawingWireFrom.y + 12.5);
+            mouse.stepArray.forEach(e => {
+                c.lineTo(e.x,e.y);
+            })
             c.lineTo(mouse.x, mouse.y);
             c.stroke();
         } else {
@@ -461,13 +468,14 @@ class WireConnector {
     update() {
         if (detectCollision(this.x, this.y, 20, 20, mouse.x, mouse.y, 1, 1)) {
             if (mouse.down) {
+
                 if (mouse.drawingWireFrom) {
                     if (mouse.drawingWireFrom.isOut !== this.isOut) {
                         if (this.isOut) {
                             mouse.down = false;
 
-                            let wire = new Wire(this, mouse.drawingWireFrom);
-
+                            let wire = new Wire(this, mouse.drawingWireFrom,mouse.stepArray);
+                            mouse.stepArray = [];
                             this.wireArray.push(wire);
                             mouse.drawingWireFrom.wireArray.push(wire)
 
@@ -475,8 +483,8 @@ class WireConnector {
                         } else if (this.wireArray.length == 0) {
                             mouse.down = false;
 
-                            let wire = new Wire(mouse.drawingWireFrom, this);
-
+                            let wire = new Wire(mouse.drawingWireFrom, this,mouse.stepArray);
+                            mouse.stepArray = [];
                             this.wireArray.push(wire);
                             mouse.drawingWireFrom.wireArray.push(wire)
 
@@ -486,6 +494,7 @@ class WireConnector {
                 } else {
                     mouse.down = false;
                     mouse.drawingWireFrom = this;
+                    mouse.stepArray = [];
                 }
             }
             if (this.on) {
@@ -518,23 +527,40 @@ class WireConnector {
 };
 
 class Wire {
-    constructor(from, to) {
+    constructor(from, to,stepArray) {
         this.from = from;
         this.to = to;
         this.on = false;
         this.hover = false;
+        this.stepArray = stepArray
     };
     update() {
         this.draw();
         this.to.on = this.on;
         let circle = [mouse.x, mouse.y]
         let radius = 10
-        let a = [this.from.x + 12.5, this.from.y + 12.5]
-        let b = [this.to.x + 12.5, this.to.y + 12.5]
-        this.hover = lineCircleCollide(a, b, circle, radius);
-        if (this.hover && mouse.isRemoving) {
-            this.remove();
-        }
+        let self = this;
+        this.hover = false;
+        this.stepArray.forEach(function(e,i){
+            let a,b;
+            if(i === 0){
+                a = [self.from.x + 12.5, self.from.y + 12.5];
+            }else{
+                a = [self.stepArray[i-1].x, self.stepArray[i-1].y]; 
+            }
+            if(i === self.stepArray.length-1){
+                b = [self.to.x + 12.5, self.to.y + 12.5];
+            }else{
+                b = [self.stepArray[i].x, self.stepArray[i].y];
+            }
+            if(lineCircleCollide(a, b, circle, radius)){
+                self.hover = true
+            }
+            if (self.hover && mouse.isRemoving) {
+                self.remove();
+            }        
+        })
+        
     };
     remove() {
         this.from.wireArray.splice(this.from.wireArray.indexOf(this), 1)
@@ -559,6 +585,9 @@ class Wire {
         c.lineWidth = 5;
         c.beginPath();
         c.moveTo(this.from.x + 12.5, this.from.y + 12.5);
+        this.stepArray.forEach(e => {
+            c.lineTo(e.x,e.y);
+        })
         c.lineTo(this.to.x + 12.5, this.to.y + 12.5);
         c.stroke();
     };
