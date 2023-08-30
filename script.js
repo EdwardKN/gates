@@ -49,35 +49,66 @@ function detectCollision(x, y, w, h, x2, y2, w2, h2) {
         return true;
     };
 };
-function collisionCircleLine(circle, line) {
+function pointCircleCollide(point, circle, r) {
+    if (r === 0) return false
+    var dx = circle[0] - point[0]
+    var dy = circle[1] - point[1]
+    return dx * dx + dy * dy <= r * r
+}
+var tmp = [0, 0]
 
-    var side1 = Math.sqrt(Math.pow(circle.x - line.p1.x, 2) + Math.pow(circle.y - line.p1.y, 2));
+function lineCircleCollide(a, b, circle, radius, nearest) {
+    //check to see if start or end points lie within circle
+    if (pointCircleCollide(a, circle, radius)) {
+        if (nearest) {
+            nearest[0] = a[0]
+            nearest[1] = a[1]
+        }
+        return true
+    } if (pointCircleCollide(b, circle, radius)) {
+        if (nearest) {
+            nearest[0] = b[0]
+            nearest[1] = b[1]
+        }
+        return true
+    }
 
-    var side2 = Math.sqrt(Math.pow(circle.x - line.p2.x, 2) + Math.pow(circle.y - line.p2.y, 2));
+    var x1 = a[0],
+        y1 = a[1],
+        x2 = b[0],
+        y2 = b[1],
+        cx = circle[0],
+        cy = circle[1]
 
-    var base = Math.sqrt(Math.pow(line.p2.x - line.p1.x, 2) + Math.pow(line.p2.y - line.p1.y, 2));
+    //vector d
+    var dx = x2 - x1
+    var dy = y2 - y1
 
-    if (circle.radius > side1 || circle.radius > side2)
-        return true;
+    //vector lc
+    var lcx = cx - x1
+    var lcy = cy - y1
 
-    var angle1 = Math.atan2(line.p2.x - line.p1.x, line.p2.y - line.p1.y) - Math.atan2(circle.x - line.p1.x, circle.y - line.p1.y);
+    //project lc onto d, resulting in vector p
+    var dLen2 = dx * dx + dy * dy //len2 of d
+    var px = dx
+    var py = dy
+    if (dLen2 > 0) {
+        var dp = (lcx * dx + lcy * dy) / dLen2
+        px *= dp
+        py *= dp
+    }
 
-    var angle2 = Math.atan2(line.p1.x - line.p2.x, line.p1.y - line.p2.y) - Math.atan2(circle.x - line.p2.x, circle.y - line.p2.y);
+    if (!nearest)
+        nearest = tmp
+    nearest[0] = x1 + px
+    nearest[1] = y1 + py
 
-    if (angle1 > Math.PI / 2 || angle2 > Math.PI / 2)
-        return false;
+    //len2 of p
+    var pLen2 = px * px + py * py
 
-    var semiperimeter = (side1 + side2 + base) / 2;
-
-    var areaOfTriangle = Math.sqrt(semiperimeter * (semiperimeter - side1) * (semiperimeter - side2) * (semiperimeter - base));
-
-    var height = 2 * areaOfTriangle / base;
-
-    if (height < circle.radius)
-        return true;
-    else
-        return false;
-
+    //check collision
+    return pointCircleCollide(nearest, circle, radius)
+        && pLen2 <= dLen2 && (px * dx + py * dy) >= 0
 }
 
 var gates = [
@@ -424,9 +455,11 @@ class Wire {
     update() {
         this.draw();
         this.to.on = this.on;
-
-        this.hover = collisionCircleLine({ x: mouse.x, y: mouse.y, radius: 10 }, { p1: { x: this.from.x, y: this.from.y }, p2: { x: this.to.x, y: this.to.y } })
-
+        let circle = [mouse.x, mouse.y]
+        let radius = 10
+        let a = [this.from.x, this.from.y]
+        let b = [this.to.x, this.to.y]
+        this.hover = lineCircleCollide(a, b, circle, radius);
         if (this.hover && mouse.isRemoving) {
             this.remove();
         }
