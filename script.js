@@ -11,7 +11,7 @@ var mouse = {
     x: undefined,
     y: undefined,
     down: false,
-    rightDown:false,
+    rightDown: false,
     drawingWireFrom: undefined,
     drawingGate: undefined,
     rightDown: false,
@@ -26,29 +26,29 @@ canvas.addEventListener("mousemove", function (e) {
     mouse.y = e.offsetY
 });
 canvas.addEventListener("mousedown", function (e) {
-    if(e.which == 1){
+    if (e.which == 1) {
         mouse.down = true;
     }
-    if(e.which == 3){
+    if (e.which == 3) {
         mouse.rightDown = true;
     }
 });
 canvas.addEventListener("mouseup", function (e) {
-    if(e.which == 1){
+    if (e.which == 1) {
         mouse.down = false;
     }
-    if(e.which == 3){
+    if (e.which == 3) {
         mouse.rightDown = false;
     }
 });
-canvas.addEventListener('contextmenu', function(ev) {
+canvas.addEventListener('contextmenu', function (ev) {
     ev.preventDefault();
     return false;
 }, false);
 
 window.addEventListener("keydown", function (e) {
-    if(e.keyCode >= 49 && e.keyCode <= 57){
-        mouse.drawingGate = gates[e.keyCode-49];
+    if (e.keyCode >= 49 && e.keyCode <= 57) {
+        mouse.drawingGate = gates[e.keyCode - 49];
     }
     if (e.keyCode === 27) {
         mouse.drawingWireFrom = undefined;
@@ -148,141 +148,141 @@ window.onbeforeunload = saveData;
 var saveButton = undefined;
 var clearButton = undefined;
 
-function saveData(){
+function saveData() {
     localStorage.setItem("gates", JSON.stringify(gates))
 }
-function loadData(){
-    if(JSON.parse(localStorage.getItem("gates"))){
+function loadData() {
+    if (JSON.parse(localStorage.getItem("gates"))) {
         gates = JSON.parse(localStorage.getItem("gates"))
     }
     init();
 }
-function saveCurrentGates(l){
+function saveCurrentGates(l) {
     let inputArrayValues = JSON.prune(inputArray)
     let outputArrayValues = JSON.prune(outputArray)
     let gateArrayValues = JSON.prune(gateArray)
 
     let wireArray = [];
-    function putSearches(h){
+    function putSearches(h) {
         h.wireArray.forEach(g => {
             let object = {
-                from:{
-                    x:g.from.x,
-                    y:g.from.y
+                from: {
+                    x: g.from.x,
+                    y: g.from.y
                 },
-                to:{
-                    x:g.to.x,
-                    y:g.to.y
+                to: {
+                    x: g.to.x,
+                    y: g.to.y
                 },
-                stepArray:g.stepArray
+                stepArray: g.stepArray
             }
-            if(wireArray.includes(JSON.stringify(object)) == false){
+            if (wireArray.includes(JSON.stringify(object)) == false) {
                 wireArray.push(JSON.stringify(object));
             }
         })
     }
-    function searchForWire(e){    
-        if(e instanceof Gate){
+    function searchForWire(e) {
+        if (e instanceof Gate) {
             e.inputs.forEach(h => {
-                putSearches(h) 
+                putSearches(h)
             })
             e.outputs.forEach(h => {
                 putSearches(h)
             })
-        }else{
+        } else {
             putSearches(e.wireConnector);
         }
     }
     inputArray.forEach(e => searchForWire(e))
     outputArray.forEach(e => searchForWire(e))
     gateArray.forEach(e => searchForWire(e))
-    
-    wireValues =  JSON.stringify(wireArray);
+
+    wireValues = JSON.stringify(wireArray);
 
     let values = {
-        input:inputArrayValues,
-        gate:gateArrayValues,
-        output:outputArrayValues,
-        wires:wireValues
+        input: inputArrayValues,
+        gate: gateArrayValues,
+        output: outputArrayValues,
+        wires: wireValues
     };
     gates[l].values = values;
 }
-function loadGate(i){
+function loadGate(i) {
 
-    if(gates[i].values == undefined) {
+    if (gates[i].values == undefined) {
         clearButton.onClick();
         return;
     }
 
     inputArray = [];
     let tmpInputArray = JSON.parse(gates[i].values.input);
-    tmpInputArray.forEach(e =>{
+    tmpInputArray.forEach(e => {
         inputArray.push(new Input(e.y));
     });
 
     gateArray = [];
     let tmpGateArray = JSON.parse(gates[i].values.gate);
-    tmpGateArray.forEach(e =>{
+    tmpGateArray.forEach(e => {
         let table = [];
-        e.tableInputs.forEach(function(g,i){
-            table[JSON.stringify(g).replace(",","").replace("[","").replace("]","")] = JSON.stringify(e.tableOutputs[i][0])
+        e.tableInputs.forEach(function (g, i) {
+            table[JSON.stringify(g).replace(",", "").replace("[", "").replace("]", "")] = JSON.stringify(e.tableOutputs[i][0])
         })
-        gateArray.push(new Gate(e.x,e.y,{table:table,name:e.name}));
+        gateArray.push(new Gate(e.x, e.y, { table: table, name: e.name }));
     });
 
 
     outputArray = [];
 
     let tmpOutputArray = JSON.parse(gates[i].values.output);
-    tmpOutputArray.forEach(e =>{
+    tmpOutputArray.forEach(e => {
         outputArray.push(new Output(e.y));
     });
 
     let wireArray = JSON.parse(gates[i].values.wires);
     wireArray = wireArray.map(e => JSON.parse(e))
-    inputArray.forEach(e =>{
+    inputArray.forEach(e => {
         wireArray.forEach(g => {
-            if(g.from.x == e.wireConnector.x && g.from.y == e.wireConnector.y){
+            if (g.from.x == e.wireConnector.x && g.from.y == e.wireConnector.y) {
                 gateArray.forEach(h => {
                     h.inputs.forEach(b => {
-                        if(g.to.x == b.x && g.to.y == b.y){
-                            let wire = new Wire(e.wireConnector, b,g.stepArray);
+                        if (g.to.x == b.x && g.to.y == b.y) {
+                            let wire = new Wire(e.wireConnector, b, g.stepArray);
                             e.wireConnector.wireArray.push(wire);
                             b.wireArray.push(wire)
                         }
                     })
                 })
                 outputArray.forEach(h => {
-                    if(g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y){
-                        let wire = new Wire(e.wireConnector, h.wireConnector,g.stepArray);
+                    if (g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y) {
+                        let wire = new Wire(e.wireConnector, h.wireConnector, g.stepArray);
                         e.wireConnector.wireArray.push(wire);
                         h.wireConnector.wireArray.push(wire)
                     }
-                    
+
                 })
             }
         })
     })
-    gateArray.forEach(e =>{
+    gateArray.forEach(e => {
         wireArray.forEach(g => {
             e.outputs.forEach(a => {
-                if(g.from.x == a.x && g.from.y == a.y){
+                if (g.from.x == a.x && g.from.y == a.y) {
                     gateArray.forEach(h => {
                         h.inputs.forEach(b => {
-                            if(g.to.x == b.x && g.to.y == b.y){
-                                let wire = new Wire(a, b,g.stepArray);
+                            if (g.to.x == b.x && g.to.y == b.y) {
+                                let wire = new Wire(a, b, g.stepArray);
                                 a.wireArray.push(wire);
                                 b.wireArray.push(wire)
                             }
                         })
                     })
                     outputArray.forEach(h => {
-                        if(g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y){
-                            let wire = new Wire(a, h.wireConnector,g.stepArray);
+                        if (g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y) {
+                            let wire = new Wire(a, h.wireConnector, g.stepArray);
                             a.wireArray.push(wire);
                             h.wireConnector.wireArray.push(wire)
                         }
-                        
+
                     })
                 }
             })
@@ -306,15 +306,15 @@ function init() {
     gates.forEach(function (e, i) {
         e.button = new Button(10 + 110 * i, 10, 100, 30, e.name, function () {
             mouse.drawingGate = e;
-        },function(){
-            if(i > 1){
+        }, function () {
+            if (i > 1) {
                 mouse.rightDown = false;
-                if(confirm("Would you like to edit this component?")){
+                if (confirm("Would you like to edit this component?")) {
                     loadGate(i)
-                }else{
-                    if(confirm("Would you like to delete this component?")){
+                } else {
+                    if (confirm("Would you like to delete this component?")) {
                         console.log(gates.indexOf(e))
-                        gates.splice(gates.indexOf(e),1)
+                        gates.splice(gates.indexOf(e), 1)
                         init();
 
                     }
@@ -323,7 +323,7 @@ function init() {
         });
     });
     saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save);
-    clearButton = new Button('canvas.width - 240', 10, 100, 30, "CLEAR", function(){
+    clearButton = new Button('canvas.width - 240', 10, 100, 30, "CLEAR", function () {
         inputArray = [];
         outputArray = [];
         gateArray = [];
@@ -332,7 +332,7 @@ function init() {
 
 async function save() {
     let save = {}
-    
+
     for (let i = 0; i < Math.pow(2, inputArray.length); i++) {
         let id = (i >>> 0).toString(2)
         id = '0'.repeat(inputArray.length - id.length) + id
@@ -347,16 +347,16 @@ async function save() {
         save[id] = result
     }
     let name = "";
-    while(name === "" || name === "NOT" || name === "AND" || name.length > 7){
-        name = prompt("Name of component: ",name)
+    while (name === "" || name === "NOT" || name === "AND" || name.length > 7) {
+        name = prompt("Name of component: ", name)
     }
-    if(gates.filter(e => e.name == name).length !== 1){
-        gates.push( { name: name, table: save })
+    if (gates.filter(e => e.name == name).length !== 1) {
+        gates.push({ name: name, table: save })
         init()
-        saveCurrentGates(gates.length-1);
-    }else{
+        saveCurrentGates(gates.length - 1);
+    } else {
         let index = gates.map(e => e.name).indexOf(name);
-        gates[index] = ( { name: name, table: save })
+        gates[index] = ({ name: name, table: save })
         init()
         saveCurrentGates(index);
     }
@@ -372,14 +372,14 @@ function render() {
     c.fillRect(0, 0, canvas.width, 50)
     if (mouse.y > 75 && mouse.isMoving == undefined) {
         if (mouse.drawingWireFrom) {
-            if(mouse.down){
-                mouse.stepArray.push({x:mouse.x,y:mouse.y})
+            if (mouse.down) {
+                mouse.stepArray.push({ x: mouse.x, y: mouse.y })
             };
             c.lineWidth = 5;
             c.beginPath();
             c.moveTo(mouse.drawingWireFrom.x + 12.5, mouse.drawingWireFrom.y + 12.5);
             mouse.stepArray.forEach(e => {
-                c.lineTo(e.x,e.y);
+                c.lineTo(e.x, e.y);
             })
             c.lineTo(mouse.x, mouse.y);
             c.stroke();
@@ -428,7 +428,7 @@ var gateArray = [];
 var buttons = [];
 
 class Button {
-    constructor(x, y, w, h, text, onClick,onRightClick) {
+    constructor(x, y, w, h, text, onClick, onRightClick) {
         this.xValue = x;
         this.y = y;
         this.w = w;
@@ -458,7 +458,7 @@ class Button {
             if (this.hover && mouse.rightDown) {
                 this.onRightClick();
             }
-            
+
             this.draw()
         }
         this.visible = false;
@@ -572,12 +572,12 @@ class Gate {
         this.outputAmount = this.tableOutputs[0].length;
         this.inputs = [];
         for (let i = 0; i < this.inputAmount; i++) {
-            this.inputs.push(new WireConnector(this.x - 30, this.y+ (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount*i, false))
+            this.inputs.push(new WireConnector(this.x - 30, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount * i, false))
         };
 
         this.outputs = [];
         for (let i = 0; i < this.outputAmount; i++) {
-            this.outputs.push(new WireConnector(this.x + 115, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount*i, true))
+            this.outputs.push(new WireConnector(this.x + 115, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i, true))
         };
     }
     update() {
@@ -591,7 +591,7 @@ class Gate {
                 this.inputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 gateArray.splice(gateArray.indexOf(this), 1);
             }
-            if (mouse.down && mouse.isMoving == undefined ||mouse.down && mouse.isMoving == this) {
+            if (mouse.down && mouse.isMoving == undefined || mouse.down && mouse.isMoving == this) {
 
                 mouse.isMoving = this;
                 let self = this;
@@ -600,11 +600,11 @@ class Gate {
                     this.y = mouse.y - 50 / 2;
                     for (let i = 0; i < this.inputAmount; i++) {
                         this.inputs[i].x = this.x - 30
-                        this.inputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount*i
+                        this.inputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount * i
                     };
                     for (let i = 0; i < this.outputAmount; i++) {
                         this.outputs[i].x = this.x + 115
-                        this.outputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount*i
+                        this.outputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i
                     };
                 }
             } else if (mouse.isMoving === this) {
@@ -663,7 +663,7 @@ class WireConnector {
                         if (this.isOut) {
                             mouse.down = false;
 
-                            let wire = new Wire(this, mouse.drawingWireFrom,mouse.stepArray);
+                            let wire = new Wire(this, mouse.drawingWireFrom, mouse.stepArray);
                             mouse.stepArray = [];
                             this.wireArray.push(wire);
                             mouse.drawingWireFrom.wireArray.push(wire)
@@ -672,7 +672,7 @@ class WireConnector {
                         } else if (this.wireArray.length == 0) {
                             mouse.down = false;
 
-                            let wire = new Wire(mouse.drawingWireFrom, this,mouse.stepArray);
+                            let wire = new Wire(mouse.drawingWireFrom, this, mouse.stepArray);
                             mouse.stepArray = [];
                             this.wireArray.push(wire);
                             mouse.drawingWireFrom.wireArray.push(wire)
@@ -716,7 +716,7 @@ class WireConnector {
 };
 
 class Wire {
-    constructor(from, to,stepArray) {
+    constructor(from, to, stepArray) {
         this.from = from;
         this.to = to;
         this.on = false;
@@ -730,26 +730,26 @@ class Wire {
         let radius = 10
         let self = this;
         this.hover = false;
-        this.stepArray.forEach(function(e,i){
-            let a,b;
-            if(i === 0){
+        this.stepArray.forEach(function (e, i) {
+            let a, b;
+            if (i === 0) {
                 a = [self.from.x + 12.5, self.from.y + 12.5];
-            }else{
-                a = [self.stepArray[i-1].x, self.stepArray[i-1].y]; 
+            } else {
+                a = [self.stepArray[i - 1].x, self.stepArray[i - 1].y];
             }
-            if(i === self.stepArray.length-1){
+            if (i === self.stepArray.length - 1) {
                 b = [self.to.x + 12.5, self.to.y + 12.5];
-            }else{
+            } else {
                 b = [self.stepArray[i].x, self.stepArray[i].y];
             }
-            if(lineCircleCollide(a, b, circle, radius)){
+            if (lineCircleCollide(a, b, circle, radius)) {
                 self.hover = true
             }
             if (self.hover && mouse.rightDown) {
                 self.remove();
-            }        
+            }
         })
-        
+
     };
     remove() {
         this.from.wireArray.splice(this.from.wireArray.indexOf(this), 1)
@@ -775,7 +775,7 @@ class Wire {
         c.beginPath();
         c.moveTo(this.from.x + 12.5, this.from.y + 12.5);
         this.stepArray.forEach(e => {
-            c.lineTo(e.x,e.y);
+            c.lineTo(e.x, e.y);
         })
         c.lineTo(this.to.x + 12.5, this.to.y + 12.5);
         c.stroke();
