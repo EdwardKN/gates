@@ -12,7 +12,8 @@ var mouse = {
     y: undefined,
     down: false,
     drawingWireFrom: undefined,
-    drawingGate: undefined
+    drawingGate: undefined,
+    isRemoving: false
 };
 
 window.addEventListener("resize", resize);
@@ -31,6 +32,15 @@ canvas.addEventListener("mouseup", function (e) {
 window.addEventListener("keydown", function (e) {
     if (e.keyCode === 27) {
         mouse.drawingWireFrom = undefined;
+        mouse.drawingGate = undefined;
+    }
+    if (e.keyCode === 8) {
+        mouse.isRemoving = true;
+    }
+})
+window.addEventListener("keyup", function (e) {
+    if (e.keyCode === 8) {
+        mouse.isRemoving = false;
     }
 })
 
@@ -39,6 +49,36 @@ function detectCollision(x, y, w, h, x2, y2, w2, h2) {
         return true;
     };
 };
+function collisionCircleLine(circle, line) {
+
+    var side1 = Math.sqrt(Math.pow(circle.x - line.p1.x, 2) + Math.pow(circle.y - line.p1.y, 2));
+
+    var side2 = Math.sqrt(Math.pow(circle.x - line.p2.x, 2) + Math.pow(circle.y - line.p2.y, 2));
+
+    var base = Math.sqrt(Math.pow(line.p2.x - line.p1.x, 2) + Math.pow(line.p2.y - line.p1.y, 2));
+
+    if (circle.radius > side1 || circle.radius > side2)
+        return true;
+
+    var angle1 = Math.atan2(line.p2.x - line.p1.x, line.p2.y - line.p1.y) - Math.atan2(circle.x - line.p1.x, circle.y - line.p1.y);
+
+    var angle2 = Math.atan2(line.p1.x - line.p2.x, line.p1.y - line.p2.y) - Math.atan2(circle.x - line.p2.x, circle.y - line.p2.y);
+
+    if (angle1 > Math.PI / 2 || angle2 > Math.PI / 2)
+        return false;
+
+    var semiperimeter = (side1 + side2 + base) / 2;
+
+    var areaOfTriangle = Math.sqrt(semiperimeter * (semiperimeter - side1) * (semiperimeter - side2) * (semiperimeter - base));
+
+    var height = 2 * areaOfTriangle / base;
+
+    if (height < circle.radius)
+        return true;
+    else
+        return false;
+
+}
 
 var gates = [
     {
@@ -58,6 +98,7 @@ var gates = [
         }
     }
 ]
+var saveButton = undefined;
 
 function update() {
     requestAnimationFrame(update);
@@ -76,8 +117,12 @@ function init() {
             mouse.drawingGate = e;
         })
     })
+    saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", function () {
+
+    })
 }
 function render() {
+    saveButton.visible = true;
     gates.forEach(e => e.button.visible = true)
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.fillStyle = "gray"
@@ -127,7 +172,7 @@ var buttons = [];
 
 class Button {
     constructor(x, y, w, h, text, onClick) {
-        this.x = x;
+        this.xValue = x;
         this.y = y;
         this.w = w;
         this.h = h;
@@ -135,10 +180,14 @@ class Button {
         this.onClick = onClick;
         this.visible = false;
         this.text = text;
+        this.x = this.xValue;
 
         buttons.push(this);
     }
     update() {
+        if (typeof this.xValue == 'string') {
+            this.x = eval(this.xValue)
+        }
         this.hover = false;
         if (this.visible) {
             if (detectCollision(this.x, this.y, this.w, this.h, mouse.x, mouse.y, 1, 1)) {
@@ -177,6 +226,10 @@ class Input {
     };
     update() {
         if (detectCollision(10, this.y, 25, 50, mouse.x, mouse.y, 1, 1)) {
+            if (mouse.isRemoving) {
+                this.wireConnector.wireArray.forEach(e => e.remove())
+                inputArray.splice(inputArray.indexOf(this), 1);
+            }
             if (this.on) {
                 c.fillStyle = "darkred";
             } else {
@@ -206,17 +259,33 @@ class Output {
         this.y = y;
         this.wireConnector = new WireConnector(canvas.width - 45 - 25, this.y + 12.5, false, this);
         this.on = false;
+        this.hover = false;
     }
     update() {
+        this.hover = detectCollision(canvas.width - 20 - 25, this.y, 25, 50, mouse.x, mouse.y, 1, 1)
+        if (this.hover) {
+            if (mouse.isRemoving) {
+                this.wireConnector.wireArray.forEach(e => e.remove())
+                outputArray.splice(inputArray.indexOf(this), 1);
+            }
+        }
         this.draw()
         this.wireConnector.x = canvas.width - 45 - 25;
         this.wireConnector.update();
     }
     draw() {
         if (this.on) {
-            c.fillStyle = "red"
+            if (this.hover) {
+                c.fillStyle = "darkred"
+            } else {
+                c.fillStyle = "red"
+            }
         } else {
-            c.fillStyle = "black"
+            if (this.hover) {
+                c.fillStyle = "gray"
+            } else {
+                c.fillStyle = "black"
+            }
         }
         c.fillRect(canvas.width - 20 - 25, this.y, 25, 50);
     }
@@ -238,8 +307,17 @@ class Gate {
         for (let i = 0; i < outputAmount; i++) {
             this.outputs.push(new WireConnector(this.x + 35, this.y + i * 30, true))
         };
+        this.hover = false;
     };
     update() {
+        this.hover = detectCollision(this.x, this.y, 25, Math.max(this.inputs.length, this.outputs.length) * 30, mouse.x, mouse.y, 1, 1)
+        if (this.hover) {
+            if (mouse.isRemoving) {
+                this.outputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
+                this.inputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
+                gateArray.splice(inputArray.indexOf(this), 1);
+            }
+        }
         let inputThing = this.inputs.map(e => e.on == true ? 1 : 0)
         let outputIndex = undefined;
         this.tableInputs.forEach(function (e, i) {
@@ -259,7 +337,11 @@ class Gate {
         this.draw();
     };
     draw() {
-        c.fillStyle = "black";
+        if (this.hover) {
+            c.fillStyle = "gray";
+        } else {
+            c.fillStyle = "black";
+        }
         c.fillRect(this.x, this.y, 25, Math.max(this.inputs.length, this.outputs.length) * 30)
     };
 };
@@ -337,16 +419,38 @@ class Wire {
         this.from = from;
         this.to = to;
         this.on = false;
+        this.hover = false;
     };
     update() {
         this.draw();
         this.to.on = this.on;
+
+        this.hover = collisionCircleLine({ x: mouse.x, y: mouse.y, radius: 10 }, { p1: { x: this.from.x, y: this.from.y }, p2: { x: this.to.x, y: this.to.y } })
+
+        if (this.hover && mouse.isRemoving) {
+            this.remove();
+        }
     };
+    remove() {
+        this.from.wireArray.splice(this.from.wireArray.indexOf(this), 1)
+        this.to.on = false;
+        this.to.wireArray.splice(this.to.wireArray.indexOf(this), 1)
+        this.to = undefined;
+        this.from = undefined;
+    }
     draw() {
         if (this.on) {
-            c.strokeStyle = "red";
+            if (this.hover) {
+                c.strokeStyle = "darkred";
+            } else {
+                c.strokeStyle = "red";
+            }
         } else {
-            c.strokeStyle = "black";
+            if (this.hover) {
+                c.strokeStyle = "gray";
+            } else {
+                c.strokeStyle = "black";
+            }
         }
         c.lineWidth = 5;
         c.beginPath();
