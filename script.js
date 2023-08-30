@@ -67,7 +67,7 @@ function render() {
                 };
             }
         } else if (mouse.x > canvas.width - 100) {
-            if (inputArray.filter(e => detectCollision(10, e.y - 50 / 2, 25, 50, 10, mouse.y - 50, 25, 50)).length == 0) {
+            if (outputArray.filter(e => detectCollision(10, e.y - 50 / 2, 25, 50, 10, mouse.y - 50, 25, 50)).length == 0) {
                 c.fillRect(canvas.width - 25 - 20, mouse.y - 50 / 2, 25, 50);
                 if (mouse.down) {
                     mouse.down = false;
@@ -130,9 +130,15 @@ class Output {
     }
     update() {
         this.draw()
+        this.wireConnector.x = canvas.width - 45 - 25;
         this.wireConnector.update();
     }
     draw() {
+        if (this.on) {
+            c.fillStyle = "red"
+        } else {
+            c.fillStyle = "black"
+        }
         c.fillRect(canvas.width - 20 - 25, this.y, 25, 50);
     }
 }
