@@ -519,7 +519,6 @@ class Wire {
         this.to.on = false;
         this.to.wireArray.splice(this.to.wireArray.indexOf(this), 1)
         this.to = undefined;
-        this.from = undefined;
     }
     draw() {
         if (this.on) {
