@@ -134,8 +134,20 @@ var gates = [
         }
     }
 ]
+
+window.onload = loadData;
+window.onbeforeunload = saveData;
+
 var saveButton = undefined;
 var clearButton = undefined;
+
+function saveData(){
+    localStorage.setItem("gates", JSON.stringify(gates))
+}
+function loadData(){
+    gates = JSON.parse(localStorage.getItem("gates"))
+    init();
+}
 
 function update() {
     requestAnimationFrame(update);
