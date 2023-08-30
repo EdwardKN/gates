@@ -13,7 +13,8 @@ var mouse = {
     down: false,
     drawingWireFrom: undefined,
     drawingGate: undefined,
-    isRemoving: false
+    isRemoving: false,
+    isMoving: undefined
 };
 
 window.addEventListener("resize", resize);
@@ -158,11 +159,11 @@ function render() {
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.fillStyle = "gray"
     c.fillRect(0, 0, canvas.width, 50)
-    if (mouse.y > 75) {
+    if (mouse.y > 75 && mouse.isMoving == undefined) {
         if (mouse.drawingWireFrom) {
             c.lineWidth = 5;
             c.beginPath();
-            c.moveTo(mouse.drawingWireFrom.x, mouse.drawingWireFrom.y);
+            c.moveTo(mouse.drawingWireFrom.x + 12.5, mouse.drawingWireFrom.y + 12.5);
             c.lineTo(mouse.x, mouse.y);
             c.stroke();
         } else {
@@ -183,9 +184,14 @@ function render() {
                     };
                 };
             } else if (mouse.drawingGate) {
-                if (gateArray.filter(e => detectCollision(e.x, e.y, 25, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, 50)).length == 0) {
-                    let tableInputs = Object.keys(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
-                    let tableOutputs = Object.values(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
+                let tableInputs = Object.keys(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
+                let tableOutputs = Object.values(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
+                c.fillStyle = "gray"
+                c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+
+                if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs.length, tableOutputs.length) * 15)).length == 0) {
+                    c.fillStyle = "black"
+                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
 
                     c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
                     if (mouse.down) {
@@ -330,7 +336,14 @@ class Gate {
         this.x = x;
         this.y = y;
         this.name = gate.name;
-        let table = gate.table;
+        this.gate = gate;
+
+        this.hover = false;
+        this.init();
+
+    };
+    init() {
+        let table = this.gate.table;
         this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
         let inputAmount = this.tableInputs[0].length;
         this.inputs = [];
@@ -343,15 +356,40 @@ class Gate {
         for (let i = 0; i < outputAmount; i++) {
             this.outputs.push(new WireConnector(this.x + 115, this.y + i * 30, true))
         };
-        this.hover = false;
-    };
+    }
     update() {
         this.hover = detectCollision(this.x, this.y, 100, Math.max(this.inputs.length, this.outputs.length) * 30, mouse.x, mouse.y, 1, 1)
+        if (mouse.isMoving === this) {
+            this.hover = true;
+        }
         if (this.hover) {
             if (mouse.isRemoving) {
                 this.outputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 this.inputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 gateArray.splice(inputArray.indexOf(this), 1);
+                mouse.isRemoving = false;
+            }
+            if (mouse.down) {
+                mouse.isMoving = this;
+                this.x = mouse.x - 25 / 2;
+                this.y = mouse.y - 50 / 2;
+                let table = this.gate.table;
+                this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
+                let inputAmount = this.tableInputs[0].length;
+                for (let i = 0; i < inputAmount; i++) {
+                    console.log(i)
+                    this.inputs[i].x = this.x - 30
+                    this.inputs[i].y = this.y + i * 30
+                };
+                this.tableOutputs = Object.values(table).map(e => e.split("").map(e => JSON.parse(e)));
+                let outputAmount = this.tableOutputs[0].length;
+                for (let i = 0; i < outputAmount; i++) {
+                    this.outputs[i].x = this.x + 115
+                    this.outputs[i].y = this.y + i * 30
+                };
+            } else if (mouse.isMoving === this) {
+                mouse.isMoving = undefined;
+                mouse.down = false;
             }
         }
         let inputThing = this.inputs.map(e => e.on == true ? 1 : 0)
@@ -467,8 +505,8 @@ class Wire {
         this.to.on = this.on;
         let circle = [mouse.x, mouse.y]
         let radius = 10
-        let a = [this.from.x, this.from.y]
-        let b = [this.to.x, this.to.y]
+        let a = [this.from.x + 12.5, this.from.y + 12.5]
+        let b = [this.to.x + 12.5, this.to.y + 12.5]
         this.hover = lineCircleCollide(a, b, circle, radius);
         if (this.hover && mouse.isRemoving) {
             this.remove();
@@ -497,8 +535,8 @@ class Wire {
         }
         c.lineWidth = 5;
         c.beginPath();
-        c.moveTo(this.from.x, this.from.y);
-        c.lineTo(this.to.x, this.to.y);
+        c.moveTo(this.from.x + 12.5, this.from.y + 12.5);
+        c.lineTo(this.to.x + 12.5, this.to.y + 12.5);
         c.stroke();
     };
 };
