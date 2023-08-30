@@ -135,6 +135,7 @@ var gates = [
     }
 ]
 var saveButton = undefined;
+var clearButton = undefined;
 
 function update() {
     requestAnimationFrame(update);
@@ -154,6 +155,11 @@ function init() {
         })
     })
     saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save)
+    clearButton = new Button('canvas.width - 240', 10, 100, 30, "CLEAR", function(){
+        inputArray = [];
+        outputArray = [];
+        gateArray = [];
+    })
 }
 
 async function save() {
@@ -181,6 +187,7 @@ async function save() {
 
 function render() {
     saveButton.visible = true;
+    clearButton.visible = true;
     gates.forEach(e => e.button.visible = true)
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.fillStyle = "gray"
