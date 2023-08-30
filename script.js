@@ -14,7 +14,7 @@ var mouse = {
     rightDown:false,
     drawingWireFrom: undefined,
     drawingGate: undefined,
-    isRemoving: false,
+    rightDown: false,
     isMoving: undefined,
     stepArray: []
 };
@@ -31,7 +31,6 @@ canvas.addEventListener("mousedown", function (e) {
     }
     if(e.which == 3){
         mouse.rightDown = true;
-        mouse.isRemoving = true;
     }
 });
 canvas.addEventListener("mouseup", function (e) {
@@ -40,7 +39,6 @@ canvas.addEventListener("mouseup", function (e) {
     }
     if(e.which == 3){
         mouse.rightDown = false;
-        mouse.isRemoving = false;
     }
 });
 canvas.addEventListener('contextmenu', function(ev) {
@@ -318,6 +316,7 @@ function init() {
                         console.log(gates.indexOf(e))
                         gates.splice(gates.indexOf(e),1)
                         init();
+
                     }
                 }
             }
@@ -489,7 +488,7 @@ class Input {
     };
     update() {
         if (detectCollision(10, this.y, 25, 50, mouse.x, mouse.y, 1, 1)) {
-            if (mouse.isRemoving) {
+            if (mouse.rightDown) {
                 this.wireConnector.wireArray.forEach(e => e.remove())
                 inputArray.splice(inputArray.indexOf(this), 1);
             }
@@ -527,7 +526,7 @@ class Output {
     update() {
         this.hover = detectCollision(canvas.width - 20 - 25, this.y, 25, 50, mouse.x, mouse.y, 1, 1)
         if (this.hover) {
-            if (mouse.isRemoving) {
+            if (mouse.rightDown) {
                 this.wireConnector.wireArray.forEach(e => e.remove())
                 outputArray.splice(inputArray.indexOf(this), 1);
             }
@@ -587,7 +586,7 @@ class Gate {
             this.hover = true;
         }
         if (this.hover) {
-            if (mouse.isRemoving) {
+            if (mouse.rightDown) {
                 this.outputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 this.inputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 gateArray.splice(gateArray.indexOf(this), 1);
@@ -746,7 +745,7 @@ class Wire {
             if(lineCircleCollide(a, b, circle, radius)){
                 self.hover = true
             }
-            if (self.hover && mouse.isRemoving) {
+            if (self.hover && mouse.rightDown) {
                 self.remove();
             }        
         })
