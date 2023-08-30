@@ -309,7 +309,18 @@ function init() {
         e.button = new Button(10 + 110 * i, 10, 100, 30, e.name, function () {
             mouse.drawingGate = e;
         },function(){
-            loadGate(i)
+            if(i > 1){
+                mouse.rightDown = false;
+                if(confirm("Would you like to edit this component?")){
+                    loadGate(i)
+                }else{
+                    if(confirm("Would you like to delete this component?")){
+                        console.log(gates.indexOf(e))
+                        gates.splice(gates.indexOf(e),1)
+                        init();
+                    }
+                }
+            }
         });
     });
     saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save);
@@ -342,14 +353,15 @@ async function save() {
     }
     if(gates.filter(e => e.name == name).length !== 1){
         gates.push( { name: name, table: save })
+        init()
         saveCurrentGates(gates.length-1);
     }else{
         let index = gates.map(e => e.name).indexOf(name);
         gates[index] = ( { name: name, table: save })
+        init()
         saveCurrentGates(index);
     }
-    init()
-
+    clearButton.onClick();
 }
 
 function render() {
