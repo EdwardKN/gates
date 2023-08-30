@@ -12,6 +12,7 @@ var mouse = {
     y: undefined,
     down: false,
     drawingWireFrom: undefined,
+    drawingGate: undefined
 };
 
 window.addEventListener("resize", resize);
@@ -39,57 +40,135 @@ function detectCollision(x, y, w, h, x2, y2, w2, h2) {
     };
 };
 
+var gates = [
+    {
+        name: "NOT",
+        table: {
+            '0': '1',
+            '1': '0'
+        }
+    },
+    {
+        name: "AND",
+        table: {
+            '00': '0',
+            '01': '0',
+            '10': '0',
+            '11': '1'
+        }
+    }
+]
+
 function update() {
     requestAnimationFrame(update);
 
     render();
+    buttons.forEach(e => e.update());
     inputArray.forEach(e => e.update());
     outputArray.forEach(e => e.update());
     gateArray.forEach(e => e.update());
 
 };
 
+function init() {
+    gates.forEach(function (e, i) {
+        e.button = new Button(10 + 110 * i, 10, 100, 30, e.name, function () {
+            mouse.drawingGate = e;
+        })
+    })
+}
 function render() {
+    gates.forEach(e => e.button.visible = true)
     c.clearRect(0, 0, canvas.width, canvas.height);
-    if (mouse.drawingWireFrom) {
-        c.lineWidth = 5;
-        c.beginPath();
-        c.moveTo(mouse.drawingWireFrom.x, mouse.drawingWireFrom.y);
-        c.lineTo(mouse.x, mouse.y);
-        c.stroke();
-    } else {
-        if (mouse.x < 100) {
-            if (inputArray.filter(e => detectCollision(10, e.y - 50 / 2, 25, 50, 10, mouse.y - 50, 25, 50)).length == 0) {
-                c.fillRect(10, mouse.y - 50 / 2, 25, 50);
-                if (mouse.down) {
-                    mouse.down = false;
-                    inputArray.push(new Input(mouse.y - 50 / 2));
-                };
-            }
-        } else if (mouse.x > canvas.width - 100) {
-            if (outputArray.filter(e => detectCollision(10, e.y - 50 / 2, 25, 50, 10, mouse.y - 50, 25, 50)).length == 0) {
-                c.fillRect(canvas.width - 25 - 20, mouse.y - 50 / 2, 25, 50);
-                if (mouse.down) {
-                    mouse.down = false;
-                    outputArray.push(new Output(mouse.y - 50 / 2));
-                };
-            }
+    c.fillStyle = "gray"
+    c.fillRect(0, 0, canvas.width, 50)
+    if (mouse.y > 75) {
+        if (mouse.drawingWireFrom) {
+            c.lineWidth = 5;
+            c.beginPath();
+            c.moveTo(mouse.drawingWireFrom.x, mouse.drawingWireFrom.y);
+            c.lineTo(mouse.x, mouse.y);
+            c.stroke();
         } else {
-            if (gateArray.filter(e => detectCollision(e.x, e.y, 25, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, 50)).length == 0) {
-                c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 25, 50);
-                if (mouse.down) {
-                    mouse.down = false;
-                    gateArray.push(new Gate(mouse.x - 25 / 2, mouse.y - 50 / 2, 2, 1));
+            if (mouse.x < 100) {
+                if (inputArray.filter(e => detectCollision(10, e.y - 50 / 2, 25, 50, 10, mouse.y - 50, 25, 50)).length == 0) {
+                    c.fillRect(10, mouse.y - 50 / 2, 25, 50);
+                    if (mouse.down) {
+                        mouse.down = false;
+                        inputArray.push(new Input(mouse.y - 50 / 2));
+                    };
                 };
-            }
+            } else if (mouse.x > canvas.width - 100) {
+                if (outputArray.filter(e => detectCollision(10, e.y - 50 / 2, 25, 50, 10, mouse.y - 50, 25, 50)).length == 0) {
+                    c.fillRect(canvas.width - 25 - 20, mouse.y - 50 / 2, 25, 50);
+                    if (mouse.down) {
+                        mouse.down = false;
+                        outputArray.push(new Output(mouse.y - 50 / 2));
+                    };
+                };
+            } else if (mouse.drawingGate) {
+                if (gateArray.filter(e => detectCollision(e.x, e.y, 25, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, 50)).length == 0) {
+                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 25, 50);
+                    if (mouse.down) {
+                        mouse.down = false;
+                        gateArray.push(new Gate(mouse.x - 25 / 2, mouse.y - 50 / 2, mouse.drawingGate.table));
+                        mouse.drawingGate = false;
+                    };
+                };
+            };
         };
-    }
+    };
 };
 
 var inputArray = [];
 var outputArray = [];
 var gateArray = [];
+var buttons = [];
 
+class Button {
+    constructor(x, y, w, h, text, onClick) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.hover = false;
+        this.onClick = onClick;
+        this.visible = false;
+        this.text = text;
+
+        buttons.push(this);
+    }
+    update() {
+        this.hover = false;
+        if (this.visible) {
+            if (detectCollision(this.x, this.y, this.w, this.h, mouse.x, mouse.y, 1, 1)) {
+                this.hover = true;
+            }
+            if (this.hover && mouse.down) {
+                mouse.down = false;
+                this.onClick();
+            }
+            this.draw()
+        }
+        this.visible = false;
+    }
+    draw() {
+        if (this.hover) {
+            c.fillStyle = "gray"
+        } else[
+            c.fillStyle = "black"
+        ]
+        c.strokeStyle = "black";
+        c.lineWidth = 5;
+        c.fillRect(this.x, this.y, this.w, this.h)
+        c.strokeRect(this.x, this.y, this.w, this.h)
+
+        c.fillStyle = "white";
+        c.font = "28px serif";
+        c.textAlign = "center";
+        c.fillText(this.text, this.x + this.w / 2, this.y + this.h - 5)
+    };
+}
 class Input {
     constructor(y) {
         this.y = y;
@@ -144,19 +223,37 @@ class Output {
 }
 
 class Gate {
-    constructor(x, y, inputAmount, outputAmount) {
+    constructor(x, y, table) {
         this.x = x;
         this.y = y;
+        this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
+        let inputAmount = this.tableInputs[0].length;
         this.inputs = [];
         for (let i = 0; i < inputAmount; i++) {
             this.inputs.push(new WireConnector(this.x - 30, this.y + i * 30, false))
         };
+        this.tableOutputs = Object.values(table).map(e => e.split("").map(e => JSON.parse(e)));
+        let outputAmount = this.tableOutputs[0].length;
         this.outputs = [];
         for (let i = 0; i < outputAmount; i++) {
             this.outputs.push(new WireConnector(this.x + 35, this.y + i * 30, true))
         };
     };
     update() {
+        let inputThing = this.inputs.map(e => e.on == true ? 1 : 0)
+        let outputIndex = undefined;
+        this.tableInputs.forEach(function (e, i) {
+            if (e.toString() == inputThing.toString()) {
+                outputIndex = i;
+            };
+        });
+
+
+        let self = this;
+        this.outputs.forEach(function (e, i) {
+            e.on = self.tableOutputs[outputIndex][i] == 0 ? false : true;
+        });
+
         this.inputs.forEach(e => e.update());
         this.outputs.forEach(e => e.update());
         this.draw();
@@ -260,4 +357,5 @@ class Wire {
 };
 
 resize();
+init();
 update();
