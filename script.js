@@ -154,7 +154,9 @@ function saveData(){
     localStorage.setItem("gates", JSON.stringify(gates))
 }
 function loadData(){
-    gates = JSON.parse(localStorage.getItem("gates"))
+    if(!JSON.parse(localStorage.getItem("gates"))){
+        gates = JSON.parse(localStorage.getItem("gates"))
+    }
     init();
 }
 function saveCurrentGates(l){
