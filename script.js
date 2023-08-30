@@ -125,7 +125,7 @@ class Input {
 class Output {
     constructor(y) {
         this.y = y;
-        this.wireConnector = new WireConnector(canvas.width - 45 - 25, this.y + 12.5, false);
+        this.wireConnector = new WireConnector(canvas.width - 45 - 25, this.y + 12.5, false, this);
         this.on = false;
     }
     update() {
@@ -168,12 +168,13 @@ class Gate {
 };
 
 class WireConnector {
-    constructor(x, y, isOut) {
+    constructor(x, y, isOut, outputThing) {
         this.x = x;
         this.y = y;
         this.isOut = isOut;
         this.wireArray = [];
         this.on = false;
+        this.outputThing = outputThing;
     }
     update() {
         if (detectCollision(this.x, this.y, 20, 20, mouse.x, mouse.y, 1, 1)) {
@@ -220,6 +221,9 @@ class WireConnector {
         let self = this;
         if (this.isOut) {
             this.wireArray.forEach(e => e.on = self.on);
+        }
+        if (this.outputThing) {
+            this.outputThing.on = this.on;
         }
 
         this.wireArray.forEach(e => e.update());
