@@ -152,10 +152,32 @@ function init() {
             mouse.drawingGate = e;
         })
     })
-    saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", function () {
-
-    })
+    saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save)
 }
+
+async function save() {
+    let save = {}
+    
+    for (let i = 0; i < Math.pow(2, inputArray.length); i++) {
+        let id = (i >>> 0).toString(2)
+        id = '0'.repeat(inputArray.length - id.length) + id
+        let inputs = id.split('')
+
+        for (let j = 0; j < inputs.length; j++) {
+            inputArray[j].on = inputs[j] === '1'
+        }
+        await new Promise(resolve => setTimeout(resolve, 50 * gateArray.length))
+        let result = ''
+        outputArray.forEach(output => result += output.on ? 1 : 0)
+        save[id] = result
+    }
+    
+    let name = prompt("Name of component: ") || 'Default'
+    gates.push( { name: name, table: save })
+    init()
+
+}
+
 function render() {
     saveButton.visible = true;
     gates.forEach(e => e.button.visible = true)
