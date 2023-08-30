@@ -187,7 +187,7 @@ function render() {
                     c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 25, 50);
                     if (mouse.down) {
                         mouse.down = false;
-                        gateArray.push(new Gate(mouse.x - 25 / 2, mouse.y - 50 / 2, mouse.drawingGate.table));
+                        gateArray.push(new Gate(mouse.x - 25 / 2, mouse.y - 50 / 2, mouse.drawingGate));
                         mouse.drawingGate = false;
                     };
                 };
@@ -323,9 +323,11 @@ class Output {
 }
 
 class Gate {
-    constructor(x, y, table) {
+    constructor(x, y, gate) {
         this.x = x;
         this.y = y;
+        this.name = gate.name;
+        let table = gate.table;
         this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
         let inputAmount = this.tableInputs[0].length;
         this.inputs = [];
@@ -336,12 +338,12 @@ class Gate {
         let outputAmount = this.tableOutputs[0].length;
         this.outputs = [];
         for (let i = 0; i < outputAmount; i++) {
-            this.outputs.push(new WireConnector(this.x + 35, this.y + i * 30, true))
+            this.outputs.push(new WireConnector(this.x + 115, this.y + i * 30, true))
         };
         this.hover = false;
     };
     update() {
-        this.hover = detectCollision(this.x, this.y, 25, Math.max(this.inputs.length, this.outputs.length) * 30, mouse.x, mouse.y, 1, 1)
+        this.hover = detectCollision(this.x, this.y, 100, Math.max(this.inputs.length, this.outputs.length) * 30, mouse.x, mouse.y, 1, 1)
         if (this.hover) {
             if (mouse.isRemoving) {
                 this.outputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
@@ -369,11 +371,16 @@ class Gate {
     };
     draw() {
         if (this.hover) {
-            c.fillStyle = "gray";
+            c.strokeStyle = "gray";
         } else {
-            c.fillStyle = "black";
+            c.strokeStyle = "black";
         }
-        c.fillRect(this.x, this.y, 25, Math.max(this.inputs.length, this.outputs.length) * 30)
+        c.lineWidth = 5
+        c.strokeRect(this.x, this.y, 100, Math.max(this.inputs.length, this.outputs.length) * 30)
+        c.fillStyle = "black";
+        c.font = "28px serif";
+        c.textAlign = "center";
+        c.fillText(this.name, this.x + 100 / 2, this.y + Math.max(this.inputs.length, this.outputs.length) * 15 + 10)
     };
 };
 
