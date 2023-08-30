@@ -31,6 +31,9 @@ canvas.addEventListener("mouseup", function (e) {
 });
 
 window.addEventListener("keydown", function (e) {
+    if(e.keyCode >= 49 && e.keyCode <= 57){
+        mouse.drawingGate = gates[e.keyCode-49];
+    }
     if (e.keyCode === 27) {
         mouse.drawingWireFrom = undefined;
         mouse.drawingGate = undefined;
@@ -345,16 +348,17 @@ class Gate {
     init() {
         let table = this.gate.table;
         this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
-        let inputAmount = this.tableInputs[0].length;
-        this.inputs = [];
-        for (let i = 0; i < inputAmount; i++) {
-            this.inputs.push(new WireConnector(this.x - 30, this.y + i * 30, false))
-        };
+        this.inputAmount = this.tableInputs[0].length;
         this.tableOutputs = Object.values(table).map(e => e.split("").map(e => JSON.parse(e)));
-        let outputAmount = this.tableOutputs[0].length;
+        this.outputAmount = this.tableOutputs[0].length;
+        this.inputs = [];
+        for (let i = 0; i < this.inputAmount; i++) {
+            this.inputs.push(new WireConnector(this.x - 30, this.y+ (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount*i, false))
+        };
+
         this.outputs = [];
-        for (let i = 0; i < outputAmount; i++) {
-            this.outputs.push(new WireConnector(this.x + 115, this.y + i * 30, true))
+        for (let i = 0; i < this.outputAmount; i++) {
+            this.outputs.push(new WireConnector(this.x + 115, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount*i, true))
         };
     }
     update() {
@@ -366,27 +370,25 @@ class Gate {
             if (mouse.isRemoving) {
                 this.outputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 this.inputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
-                gateArray.splice(inputArray.indexOf(this), 1);
+                gateArray.splice(gateArray.indexOf(this), 1);
                 mouse.isRemoving = false;
             }
-            if (mouse.down) {
+            if (mouse.down && mouse.isMoving == undefined ||mouse.down && mouse.isMoving == this) {
+
                 mouse.isMoving = this;
-                this.x = mouse.x - 25 / 2;
-                this.y = mouse.y - 50 / 2;
-                let table = this.gate.table;
-                this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
-                let inputAmount = this.tableInputs[0].length;
-                for (let i = 0; i < inputAmount; i++) {
-                    console.log(i)
-                    this.inputs[i].x = this.x - 30
-                    this.inputs[i].y = this.y + i * 30
-                };
-                this.tableOutputs = Object.values(table).map(e => e.split("").map(e => JSON.parse(e)));
-                let outputAmount = this.tableOutputs[0].length;
-                for (let i = 0; i < outputAmount; i++) {
-                    this.outputs[i].x = this.x + 115
-                    this.outputs[i].y = this.y + i * 30
-                };
+                let self = this;
+                if (gateArray.filter(e => e !== self && detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(this.inputAmount, this.outputAmount) * 15)).length == 0) {
+                    this.x = mouse.x - 25 / 2;
+                    this.y = mouse.y - 50 / 2;
+                    for (let i = 0; i < this.inputAmount; i++) {
+                        this.inputs[i].x = this.x - 30
+                        this.inputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.inputAmount*i
+                    };
+                    for (let i = 0; i < this.outputAmount; i++) {
+                        this.outputs[i].x = this.x + 115
+                        this.outputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30)/this.outputAmount*i
+                    };
+                }
             } else if (mouse.isMoving === this) {
                 mouse.isMoving = undefined;
                 mouse.down = false;
