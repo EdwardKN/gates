@@ -11,6 +11,7 @@ var mouse = {
     x: undefined,
     y: undefined,
     down: false,
+    rightDown:false,
     drawingWireFrom: undefined,
     drawingGate: undefined,
     isRemoving: false,
@@ -25,11 +26,27 @@ canvas.addEventListener("mousemove", function (e) {
     mouse.y = e.offsetY
 });
 canvas.addEventListener("mousedown", function (e) {
-    mouse.down = true;
+    if(e.which == 1){
+        mouse.down = true;
+    }
+    if(e.which == 3){
+        mouse.rightDown = true;
+        mouse.isRemoving = true;
+    }
 });
 canvas.addEventListener("mouseup", function (e) {
-    mouse.down = false;
+    if(e.which == 1){
+        mouse.down = false;
+    }
+    if(e.which == 3){
+        mouse.rightDown = false;
+        mouse.isRemoving = false;
+    }
 });
+canvas.addEventListener('contextmenu', function(ev) {
+    ev.preventDefault();
+    return false;
+}, false);
 
 window.addEventListener("keydown", function (e) {
     if(e.keyCode >= 49 && e.keyCode <= 57){
@@ -38,14 +55,6 @@ window.addEventListener("keydown", function (e) {
     if (e.keyCode === 27) {
         mouse.drawingWireFrom = undefined;
         mouse.drawingGate = undefined;
-    }
-    if (e.keyCode === 8) {
-        mouse.isRemoving = true;
-    }
-})
-window.addEventListener("keyup", function (e) {
-    if (e.keyCode === 8) {
-        mouse.isRemoving = false;
     }
 })
 
@@ -148,6 +157,139 @@ function loadData(){
     gates = JSON.parse(localStorage.getItem("gates"))
     init();
 }
+function saveCurrentGates(l){
+    let inputArrayValues = JSON.prune(inputArray)
+    let outputArrayValues = JSON.prune(outputArray)
+    let gateArrayValues = JSON.prune(gateArray)
+
+    let wireArray = [];
+    function putSearches(h){
+        h.wireArray.forEach(g => {
+            let object = {
+                from:{
+                    x:g.from.x,
+                    y:g.from.y
+                },
+                to:{
+                    x:g.to.x,
+                    y:g.to.y
+                },
+                stepArray:g.stepArray
+            }
+            if(wireArray.includes(JSON.stringify(object)) == false){
+                wireArray.push(JSON.stringify(object));
+            }
+        })
+    }
+    function searchForWire(e){    
+        if(e instanceof Gate){
+            e.inputs.forEach(h => {
+                putSearches(h) 
+            })
+            e.outputs.forEach(h => {
+                putSearches(h)
+            })
+        }else{
+            putSearches(e.wireConnector);
+        }
+    }
+    inputArray.forEach(e => searchForWire(e))
+    outputArray.forEach(e => searchForWire(e))
+    gateArray.forEach(e => searchForWire(e))
+    
+    wireValues =  JSON.stringify(wireArray);
+
+    let values = {
+        input:inputArrayValues,
+        gate:gateArrayValues,
+        output:outputArrayValues,
+        wires:wireValues
+    };
+    gates[l].values = values;
+}
+function loadGate(i){
+
+    if(gates[i].values == undefined) {
+        clearButton.onClick();
+        return;
+    }
+
+    inputArray = [];
+    let tmpInputArray = JSON.parse(gates[i].values.input);
+    tmpInputArray.forEach(e =>{
+        inputArray.push(new Input(e.y));
+    });
+
+    gateArray = [];
+    let tmpGateArray = JSON.parse(gates[i].values.gate);
+    tmpGateArray.forEach(e =>{
+        let table = [];
+        e.tableInputs.forEach(function(g,i){
+            table[JSON.stringify(g).replace(",","").replace("[","").replace("]","")] = JSON.stringify(e.tableOutputs[i][0])
+        })
+        gateArray.push(new Gate(e.x,e.y,{table:table,name:e.name}));
+    });
+
+
+    outputArray = [];
+
+    let tmpOutputArray = JSON.parse(gates[i].values.output);
+    tmpOutputArray.forEach(e =>{
+        outputArray.push(new Output(e.y));
+    });
+
+    let wireArray = JSON.parse(gates[i].values.wires);
+    wireArray = wireArray.map(e => JSON.parse(e))
+    inputArray.forEach(e =>{
+        wireArray.forEach(g => {
+            if(g.from.x == e.wireConnector.x && g.from.y == e.wireConnector.y){
+                gateArray.forEach(h => {
+                    h.inputs.forEach(b => {
+                        if(g.to.x == b.x && g.to.y == b.y){
+                            let wire = new Wire(e.wireConnector, b,g.stepArray);
+                            e.wireConnector.wireArray.push(wire);
+                            b.wireArray.push(wire)
+                        }
+                    })
+                })
+                outputArray.forEach(h => {
+                    if(g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y){
+                        let wire = new Wire(e.wireConnector, h.wireConnector,g.stepArray);
+                        e.wireConnector.wireArray.push(wire);
+                        h.wireConnector.wireArray.push(wire)
+                    }
+                    
+                })
+            }
+        })
+    })
+    gateArray.forEach(e =>{
+        wireArray.forEach(g => {
+            e.outputs.forEach(a => {
+                if(g.from.x == a.x && g.from.y == a.y){
+                    gateArray.forEach(h => {
+                        h.inputs.forEach(b => {
+                            if(g.to.x == b.x && g.to.y == b.y){
+                                let wire = new Wire(a, b,g.stepArray);
+                                a.wireArray.push(wire);
+                                b.wireArray.push(wire)
+                            }
+                        })
+                    })
+                    outputArray.forEach(h => {
+                        if(g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y){
+                            let wire = new Wire(a, h.wireConnector,g.stepArray);
+                            a.wireArray.push(wire);
+                            h.wireConnector.wireArray.push(wire)
+                        }
+                        
+                    })
+                }
+            })
+        })
+    })
+    mouse.drawingGate = undefined;
+}
 
 function update() {
     requestAnimationFrame(update);
@@ -164,15 +306,17 @@ function init() {
     gates.forEach(function (e, i) {
         e.button = new Button(10 + 110 * i, 10, 100, 30, e.name, function () {
             mouse.drawingGate = e;
-        })
-    })
-    saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save)
+        },function(){
+            loadGate(i)
+        });
+    });
+    saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save);
     clearButton = new Button('canvas.width - 240', 10, 100, 30, "CLEAR", function(){
         inputArray = [];
         outputArray = [];
         gateArray = [];
-    })
-}
+    });
+};
 
 async function save() {
     let save = {}
@@ -190,9 +334,18 @@ async function save() {
         outputArray.forEach(output => result += output.on ? 1 : 0)
         save[id] = result
     }
-    
-    let name = prompt("Name of component: ") || 'Default'
-    gates.push( { name: name, table: save })
+    let name = "";
+    while(name === "" || name === "NOT" || name === "AND" || name.length > 7){
+        name = prompt("Name of component: ",name)
+    }
+    if(gates.filter(e => e.name == name).length !== 1){
+        gates.push( { name: name, table: save })
+        saveCurrentGates(gates.length-1);
+    }else{
+        let index = gates.map(e => e.name).indexOf(name);
+        gates[index] = ( { name: name, table: save })
+        saveCurrentGates(index);
+    }
     init()
 
 }
@@ -262,13 +415,14 @@ var gateArray = [];
 var buttons = [];
 
 class Button {
-    constructor(x, y, w, h, text, onClick) {
+    constructor(x, y, w, h, text, onClick,onRightClick) {
         this.xValue = x;
         this.y = y;
         this.w = w;
         this.h = h;
         this.hover = false;
         this.onClick = onClick;
+        this.onRightClick = onRightClick;
         this.visible = false;
         this.text = text;
         this.x = this.xValue;
@@ -288,6 +442,10 @@ class Button {
                 mouse.down = false;
                 this.onClick();
             }
+            if (this.hover && mouse.rightDown) {
+                this.onRightClick();
+            }
+            
             this.draw()
         }
         this.visible = false;
@@ -419,7 +577,6 @@ class Gate {
                 this.outputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 this.inputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
                 gateArray.splice(gateArray.indexOf(this), 1);
-                mouse.isRemoving = false;
             }
             if (mouse.down && mouse.isMoving == undefined ||mouse.down && mouse.isMoving == this) {
 
