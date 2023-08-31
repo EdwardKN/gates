@@ -328,9 +328,11 @@ function init() {
     });
     saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save);
     clearButton = new Button('canvas.width - 240', 10, 100, 30, "CLEAR", function () {
-        inputArray = [];
-        outputArray = [];
-        gateArray = [];
+        if (confirm("Are you sure you would like to clear?")) {
+            inputArray = [];
+            outputArray = [];
+            gateArray = [];
+        }
     });
 };
 
@@ -592,8 +594,8 @@ class Gate {
             let values = this.gate.values;
             this.inputAmount = JSON.parse(values.input).length;
             this.outputAmount = JSON.parse(values.output).length;
-            let inputArray = JSON.parse(values.input)
-            let outputArray = JSON.parse(values.output)
+            let inputArray = JSON.parse(values.input).sort(function (a, b) { return a.y - b.y });
+            let outputArray = JSON.parse(values.output).sort(function (a, b) { return a.y - b.y });
             let gateArray = JSON.parse(values.gate)
 
             this.inputs = [];
