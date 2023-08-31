@@ -245,11 +245,11 @@ async function loadGate(i) {
 
     let wireArray = JSON.parse(gates[i].values.wires);
     wireArray = wireArray.map(e => JSON.parse(e))
-    inputArray.forEach(e => {
-        wireArray.forEach(g => {
+    inputArray.forEach(async function (e) {
+        wireArray.forEach(async function (g) {
             if (g.from.x == e.wireConnector.x && g.from.y == e.wireConnector.y) {
-                gateArray.forEach(h => {
-                    h.inputs.forEach(b => {
+                gateArray.forEach(async function (h) {
+                    h.inputs.forEach(async function (b) {
                         if (g.to.x == b.x && g.to.y == b.y) {
                             let wire = new Wire(e.wireConnector, b, g.stepArray);
                             e.wireConnector.wireArray.push(wire);
@@ -257,7 +257,7 @@ async function loadGate(i) {
                         }
                     })
                 })
-                outputArray.forEach(h => {
+                outputArray.forEach(async function (h) {
                     if (g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y) {
                         let wire = new Wire(e.wireConnector, h.wireConnector, g.stepArray);
                         e.wireConnector.wireArray.push(wire);
@@ -268,12 +268,15 @@ async function loadGate(i) {
             }
         })
     })
-    gateArray.forEach(e => {
-        wireArray.forEach(g => {
-            e.outputs.forEach(a => {
+    gateArray.forEach(async function (e) {
+        wireArray.forEach(async function (g) {
+            e.outputs.forEach(async function (a) {
+
                 if (g.from.x == a.x && g.from.y == a.y) {
-                    gateArray.forEach(h => {
-                        h.inputs.forEach(b => {
+
+                    gateArray.forEach(async function (h) {
+
+                        h.inputs.forEach(async function (b) {
                             if (g.to.x == b.x && g.to.y == b.y) {
                                 let wire = new Wire(a, b, g.stepArray);
                                 a.wireArray.push(wire);
@@ -281,7 +284,9 @@ async function loadGate(i) {
                             }
                         })
                     })
-                    outputArray.forEach(h => {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+
+                    outputArray.forEach(async function (h) {
                         if (g.to.x == h.wireConnector.x && g.to.y == h.wireConnector.y) {
                             let wire = new Wire(a, h.wireConnector, g.stepArray);
                             a.wireArray.push(wire);
@@ -646,7 +651,7 @@ class Gate {
             })
             this.insideGates.forEach(e => {
                 wireArray.forEach(g => {
-                    e.outputs.forEach(a => {
+                    e.outputs.forEach(async function (a) {
                         if (g.from.x - 10000 == a.x && g.from.y - 10000 == a.y) {
                             this.insideGates.forEach(h => {
                                 h.inputs.forEach(b => {
@@ -657,6 +662,7 @@ class Gate {
                                     }
                                 })
                             })
+                            await new Promise(resolve => setTimeout(resolve, 10));
                             this.outputConnectors.forEach(h => {
                                 if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.y) {
                                     let wire = new Wire(a, h, g.stepArray, false);
