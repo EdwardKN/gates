@@ -207,7 +207,7 @@ function saveCurrentGates(l) {
     };
     gates[l].values = values;
 }
-function loadGate(i) {
+async function loadGate(i) {
 
     if (gates[i].values == undefined) {
         clearButton.onClick();
@@ -223,11 +223,16 @@ function loadGate(i) {
     gateArray = [];
     let tmpGateArray = JSON.parse(gates[i].values.gate);
     tmpGateArray.forEach(e => {
-        let table = [];
-        e.tableInputs.forEach(function (g, i) {
-            table[JSON.stringify(g).replace(",", "").replace("[", "").replace("]", "")] = JSON.stringify(e.tableOutputs[i][0])
-        })
-        gateArray.push(new Gate(e.x, e.y, { table: table, name: e.name }));
+        if (gates[i].values.gate.table) {
+            let table = [];
+            e.tableInputs.forEach(function (g, i) {
+                table[JSON.stringify(g).replace(",", "").replace("[", "").replace("]", "")] = JSON.stringify(e.tableOutputs[i][0])
+            })
+            gateArray.push(new Gate(e.x, e.y, { table: table, name: e.name }));
+        } else {
+            gateArray.push(new Gate(e.x, e.y, gates[gates.map(e => e.name).indexOf(e.name)]));
+        }
+
     });
 
 
@@ -330,6 +335,7 @@ function init() {
 };
 
 async function save() {
+    /*
     let save = {}
 
     for (let i = 0; i < Math.pow(2, inputArray.length); i++) {
@@ -344,7 +350,7 @@ async function save() {
         let result = ''
         outputArray.forEach(output => result += output.on ? 1 : 0)
         save[id] = result
-    }
+    }*/
     let name = "";
     while (name === "" || name === "NOT" || name === "AND" || name.length > 7) {
         name = prompt("Name of component: ", name)
@@ -566,7 +572,7 @@ class Gate {
         this.init();
 
     };
-    init() {
+    async init() {
         let table = this.gate.table;
         if (table) {
             this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
