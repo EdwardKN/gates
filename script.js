@@ -620,6 +620,7 @@ class Gate {
             for (let i = 0; i < JSON.parse(values.gate).length; i++) {
                 this.insideGates.push(new Gate(gateArray[i].x - 10000, gateArray[i].y - 10000, gates[gates.map(e => e.name).indexOf(JSON.parse(values.gate)[i].name)]))
             }
+            let self = this;
 
             let wireArray = JSON.parse(values.wires);
             wireArray = wireArray.map(e => JSON.parse(e))
@@ -629,7 +630,7 @@ class Gate {
 
                     if (g.from.x - 10000 == e.x && g.from.y - 10000 == e.y) {
 
-                        this.insideGates.forEach(h => {
+                        self.insideGates.forEach(h => {
                             h.inputs.forEach(b => {
                                 if (g.to.x - 10000 == b.x && g.to.y - 10000 == b.y) {
                                     let wire = new Wire(e, b, g.stepArray, false);
@@ -638,7 +639,7 @@ class Gate {
                                 }
                             })
                         })
-                        this.outputConnectors.forEach(h => {
+                        self.outputConnectors.forEach(h => {
                             if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.wireConnector.y) {
                                 let wire = new Wire(e, h, g.stepArray, false);
                                 e.wireArray.push(wire);
@@ -653,7 +654,7 @@ class Gate {
                 wireArray.forEach(g => {
                     e.outputs.forEach(async function (a) {
                         if (g.from.x - 10000 == a.x && g.from.y - 10000 == a.y) {
-                            this.insideGates.forEach(h => {
+                            self.insideGates.forEach(h => {
                                 h.inputs.forEach(b => {
                                     if (g.to.x - 10000 == b.x && g.to.y - 10000 == b.y) {
                                         let wire = new Wire(a, b, g.stepArray, false);
@@ -663,7 +664,7 @@ class Gate {
                                 })
                             })
                             await new Promise(resolve => setTimeout(resolve, 10));
-                            this.outputConnectors.forEach(h => {
+                            self.outputConnectors.forEach(h => {
                                 if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.y) {
                                     let wire = new Wire(a, h, g.stepArray, false);
                                     a.wireArray.push(wire);
