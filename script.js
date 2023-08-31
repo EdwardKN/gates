@@ -313,7 +313,6 @@ function init() {
                     loadGate(i)
                 } else {
                     if (confirm("Would you like to delete this component?")) {
-                        console.log(gates.indexOf(e))
                         gates.splice(gates.indexOf(e), 1)
                         init();
 
@@ -351,12 +350,12 @@ async function save() {
         name = prompt("Name of component: ", name)
     }
     if (gates.filter(e => e.name == name).length !== 1) {
-        gates.push({ name: name, table: save })
+        gates.push({ name: name })
         init()
         saveCurrentGates(gates.length - 1);
     } else {
         let index = gates.map(e => e.name).indexOf(name);
-        gates[index] = ({ name: name, table: save })
+        gates[index] = ({ name: name })
         init()
         saveCurrentGates(index);
     }
@@ -401,8 +400,8 @@ function render() {
                     };
                 };
             } else if (mouse.drawingGate) {
-                let tableInputs = Object.keys(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
-                let tableOutputs = Object.values(mouse.drawingGate.table).map(e => e.split("").map(e => JSON.parse(e)));
+                let tableInputs = [2, 2]
+                let tableOutputs = [2, 2]
                 c.fillStyle = "gray"
                 c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
 
@@ -561,24 +560,110 @@ class Gate {
         this.gate = gate;
 
         this.hover = false;
+        this.inputConnectors = [];
+        this.outputConnectors = [];
+        this.insideGates = [];
         this.init();
 
     };
     init() {
         let table = this.gate.table;
-        this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
-        this.inputAmount = this.tableInputs[0].length;
-        this.tableOutputs = Object.values(table).map(e => e.split("").map(e => JSON.parse(e)));
-        this.outputAmount = this.tableOutputs[0].length;
-        this.inputs = [];
-        for (let i = 0; i < this.inputAmount; i++) {
-            this.inputs.push(new WireConnector(this.x - 30, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount * i, false))
-        };
+        if (table) {
+            this.tableInputs = Object.keys(table).map(e => e.split("").map(e => JSON.parse(e)));
+            this.inputAmount = this.tableInputs[0].length;
+            this.tableOutputs = Object.values(table).map(e => e.split("").map(e => JSON.parse(e)));
+            this.outputAmount = this.tableOutputs[0].length;
+            this.inputs = [];
+            for (let i = 0; i < this.inputAmount; i++) {
+                this.inputs.push(new WireConnector(this.x - 30, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount * i, false))
+            };
 
-        this.outputs = [];
-        for (let i = 0; i < this.outputAmount; i++) {
-            this.outputs.push(new WireConnector(this.x + 115, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i, true))
-        };
+            this.outputs = [];
+            for (let i = 0; i < this.outputAmount; i++) {
+                this.outputs.push(new WireConnector(this.x + 115, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i, true))
+            };
+        } else {
+            let values = this.gate.values;
+            this.inputAmount = JSON.parse(values.input).length;
+            this.outputAmount = JSON.parse(values.output).length;
+            let inputArray = JSON.parse(values.input)
+            let outputArray = JSON.parse(values.output)
+            let gateArray = JSON.parse(values.gate)
+
+            this.inputs = [];
+            this.inputConnectors = [];
+            for (let i = 0; i < this.inputAmount; i++) {
+                this.inputs.push(new WireConnector(this.x - 30, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount * i, false))
+                this.inputConnectors.push(new WireConnector(inputArray[i].wireConnector.x - 10000, inputArray[i].wireConnector.y - 10000, true))
+            };
+
+            this.outputs = [];
+            this.outputConnectors = [];
+            for (let i = 0; i < this.outputAmount; i++) {
+                this.outputs.push(new WireConnector(this.x + 115, this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i, true))
+                this.outputConnectors.push(new WireConnector(outputArray[i].wireConnector.x - 10000, outputArray[i].wireConnector.y - 10000, true))
+            };
+            this.insideGates = [];
+            for (let i = 0; i < JSON.parse(values.gate).length; i++) {
+                this.insideGates.push(new Gate(gateArray[i].x - 10000, gateArray[i].y - 10000, gates[gates.map(e => e.name).indexOf(JSON.parse(values.gate)[i].name)]))
+            }
+
+            let wireArray = JSON.parse(values.wires);
+            wireArray = wireArray.map(e => JSON.parse(e))
+
+            this.inputConnectors.forEach(e => {
+                wireArray.forEach(g => {
+
+                    if (g.from.x - 10000 == e.x && g.from.y - 10000 == e.y) {
+
+                        this.insideGates.forEach(h => {
+                            h.inputs.forEach(b => {
+                                if (g.to.x - 10000 == b.x && g.to.y - 10000 == b.y) {
+                                    let wire = new Wire(e, b, g.stepArray, false);
+                                    e.wireArray.push(wire);
+                                    b.wireArray.push(wire)
+                                }
+                            })
+                        })
+                        this.outputConnectors.forEach(h => {
+                            if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.wireConnector.y) {
+                                let wire = new Wire(e, h, g.stepArray, false);
+                                e.wireArray.push(wire);
+                                h.wireArray.push(wire)
+                            }
+
+                        })
+                    }
+                })
+            })
+            this.insideGates.forEach(e => {
+                wireArray.forEach(g => {
+                    e.outputs.forEach(a => {
+                        if (g.from.x - 10000 == a.x && g.from.y - 10000 == a.y) {
+                            this.insideGates.forEach(h => {
+                                h.inputs.forEach(b => {
+                                    if (g.to.x - 10000 == b.x && g.to.y - 10000 == b.y) {
+                                        let wire = new Wire(a, b, g.stepArray, false);
+                                        a.wireArray.push(wire);
+                                        b.wireArray.push(wire)
+                                    }
+                                })
+                            })
+                            this.outputConnectors.forEach(h => {
+                                if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.y) {
+                                    let wire = new Wire(a, h, g.stepArray, false);
+                                    a.wireArray.push(wire);
+                                    h.wireArray.push(wire)
+                                }
+
+                            })
+                        }
+                    })
+                })
+            })
+
+        }
+
     }
     update() {
         this.hover = detectCollision(this.x, this.y, 100, Math.max(this.inputs.length, this.outputs.length) * 30, mouse.x, mouse.y, 1, 1)
@@ -612,19 +697,34 @@ class Gate {
                 mouse.down = false;
             }
         }
-        let inputThing = this.inputs.map(e => e.on == true ? 1 : 0)
-        let outputIndex = undefined;
-        this.tableInputs.forEach(function (e, i) {
-            if (e.toString() == inputThing.toString()) {
-                outputIndex = i;
-            };
-        });
 
-
+        if (this.gate.table) {
+            let inputThing = this.inputs.map(e => e.on == true ? 1 : 0)
+            let outputIndex = undefined;
+            this.tableInputs.forEach(function (e, i) {
+                if (e.toString() == inputThing.toString()) {
+                    outputIndex = i;
+                };
+            });
+            let self = this;
+            this.outputs.forEach(function (e, i) {
+                e.on = self.tableOutputs[outputIndex][i] == 0 ? false : true;
+            });
+        }
         let self = this;
-        this.outputs.forEach(function (e, i) {
-            e.on = self.tableOutputs[outputIndex][i] == 0 ? false : true;
+        this.inputConnectors.forEach(function (e, i) {
+            e.update()
+            e.on = self.inputs[i].on;
         });
+        this.outputConnectors.forEach(function (e, i) {
+            e.update()
+            self.outputs[i].on = e.on;
+        });
+        this.insideGates.forEach(function (e, i) {
+            e.update();
+        });
+
+
 
         this.inputs.forEach(e => e.update());
         this.outputs.forEach(e => e.update());
@@ -716,12 +816,16 @@ class WireConnector {
 };
 
 class Wire {
-    constructor(from, to, stepArray) {
+    constructor(from, to, stepArray, drawing) {
         this.from = from;
         this.to = to;
         this.on = false;
         this.hover = false;
-        this.stepArray = stepArray
+        this.stepArray = stepArray;
+        this.drawing = drawing;
+        if (this.drawing == undefined) {
+            this.drawing = true;
+        }
     };
     update() {
         this.draw();
@@ -758,27 +862,29 @@ class Wire {
         this.to = undefined;
     }
     draw() {
-        if (this.on) {
-            if (this.hover) {
-                c.strokeStyle = "darkred";
+        if (this.drawing) {
+            if (this.on) {
+                if (this.hover) {
+                    c.strokeStyle = "darkred";
+                } else {
+                    c.strokeStyle = "red";
+                }
             } else {
-                c.strokeStyle = "red";
+                if (this.hover) {
+                    c.strokeStyle = "gray";
+                } else {
+                    c.strokeStyle = "black";
+                }
             }
-        } else {
-            if (this.hover) {
-                c.strokeStyle = "gray";
-            } else {
-                c.strokeStyle = "black";
-            }
+            c.lineWidth = 5;
+            c.beginPath();
+            c.moveTo(this.from.x + 12.5, this.from.y + 12.5);
+            this.stepArray.forEach(e => {
+                c.lineTo(e.x, e.y);
+            })
+            c.lineTo(this.to.x + 12.5, this.to.y + 12.5);
+            c.stroke();
         }
-        c.lineWidth = 5;
-        c.beginPath();
-        c.moveTo(this.from.x + 12.5, this.from.y + 12.5);
-        this.stepArray.forEach(e => {
-            c.lineTo(e.x, e.y);
-        })
-        c.lineTo(this.to.x + 12.5, this.to.y + 12.5);
-        c.stroke();
     };
 };
 
