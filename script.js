@@ -772,8 +772,8 @@ class Gate {
                             })
                             await new Promise(resolve => setTimeout(resolve, 10));
                             self.outputConnectors.forEach(h => {
-                                if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.y) {
-                                    let wire = new Wire(a, h, g.stepArray, false);
+                                if (g.to.y - 10000 == h.y) {
+                                    let wire = new Wire(a, h, [], false);
                                     a.wireArray.push(wire);
                                     h.wireArray.push(wire)
                                 }
