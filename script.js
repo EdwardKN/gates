@@ -191,7 +191,11 @@ function saveCurrentGates(l) {
             e.outputs.forEach(h => {
                 putSearches(h)
             })
-        } else {
+        } else if(e instanceof Display){
+            e.inputs.forEach(h => {
+                putSearches(h)
+            })
+        }else{
             putSearches(e.wireConnector);
         }
     }
@@ -225,15 +229,20 @@ async function loadGate(i) {
     gateArray = [];
     let tmpGateArray = JSON.parse(gates[i].values.gate);
     tmpGateArray.forEach(e => {
-        if (gates[i].values.gate.table) {
-            let table = [];
-            e.tableInputs.forEach(function (g, i) {
-                table[JSON.stringify(g).replace(",", "").replace("[", "").replace("]", "")] = JSON.stringify(e.tableOutputs[i][0])
-            })
-            gateArray.push(new Gate(e.x, e.y, { table: table, name: e.name }));
-        } else {
-            gateArray.push(new Gate(e.x, e.y, gates[gates.map(e => e.name).indexOf(e.name)]));
+        if(e.name){
+            if (gates[i].values.gate.table) {
+                let table = [];
+                e.tableInputs.forEach(function (g, i) {
+                    table[JSON.stringify(g).replace(",", "").replace("[", "").replace("]", "")] = JSON.stringify(e.tableOutputs[i][0])
+                })
+                gateArray.push(new Gate(e.x, e.y, { table: table, name: e.name }));
+            } else {
+                gateArray.push(new Gate(e.x, e.y, gates[gates.map(e => e.name).indexOf(e.name)]));
+            }
+        }else{
+            gateArray.push(new Display(e.x, e.y));
         }
+        
 
     });
 
@@ -632,28 +641,28 @@ class Display{
         }
         c.lineWidth = 5
         c.strokeRect(this.x, this.y, 160, Math.max(this.inputs.length, this.outputs.length) * 30)
-        c.fillStyle = this.inputs[0].on ? "black" : "gray"
-        c.fillRect(this.x+40,this.y+20,100,10)
+        c.fillStyle = this.inputs[0].on ? "black" : "lightgray"
+        c.fillRect(this.x+40,this.y+20,100,20)
 
-        c.fillStyle = this.inputs[1].on ? "black" : "gray"
-        c.fillRect(this.x+130,this.y+20,10,110)
+        c.fillStyle = this.inputs[1].on ? "black" : "lightgray"
+        c.fillRect(this.x+120,this.y+20,20,110)
         
-        c.fillStyle = this.inputs[2].on ? "black" : "gray"
-        c.fillRect(this.x+130,this.y+100,10,110)
+        c.fillStyle = this.inputs[2].on ? "black" : "lightgray"
+        c.fillRect(this.x+120,this.y+100,20,110)
         
-        c.fillStyle = this.inputs[3].on ? "black" : "gray"
-        c.fillRect(this.x+40,this.y+20+190,100,10)
+        c.fillStyle = this.inputs[3].on ? "black" : "lightgray"
+        c.fillRect(this.x+40,this.y+20+190,100,20)
         
-        c.fillStyle = this.inputs[4].on ? "black" : "gray"
-        c.fillRect(this.x+40,this.y+100,10,110)
+        c.fillStyle = this.inputs[4].on ? "black" : "lightgray"
+        c.fillRect(this.x+40,this.y+100,20,110)
         
-        c.fillStyle = this.inputs[5].on ? "black" : "gray"
-        c.fillRect(this.x+40,this.y+20,10,110)
+        c.fillStyle = this.inputs[5].on ? "black" : "lightgray"
+        c.fillRect(this.x+40,this.y+20,20,110)
         
-        c.fillStyle = this.inputs[6].on ? "black" : "gray"
-        c.fillRect(this.x+40,this.y+20+95,100,10)
+        c.fillStyle = this.inputs[6].on ? "black" : "lightgray"
+        c.fillRect(this.x+40,this.y+20+95,100,20)
         
-        c.fillStyle = this.inputs[7].on ? "black" : "gray"
+        c.fillStyle = this.inputs[7].on ? "black" : "lightgray"
         c.fillRect(this.x+5,this.y+120,30,10)
 
 
@@ -713,7 +722,9 @@ class Gate {
             };
             this.insideGates = [];
             for (let i = 0; i < JSON.parse(values.gate).length; i++) {
-                this.insideGates.push(new Gate(gateArray[i].x - 10000, gateArray[i].y - 10000, gates[gates.map(e => e.name).indexOf(JSON.parse(values.gate)[i].name)]))
+                if(gateArray[i].name){
+                    this.insideGates.push(new Gate(gateArray[i].x - 10000, gateArray[i].y - 10000, gates[gates.map(e => e.name).indexOf(JSON.parse(values.gate)[i].name)]))
+                }
             }
             let self = this;
 
@@ -735,7 +746,7 @@ class Gate {
                             })
                         })
                         self.outputConnectors.forEach(h => {
-                            if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.wireConnector.y) {
+                            if (g.to.x - 10000 == h.x && g.to.y - 10000 == h.y) {
                                 let wire = new Wire(e, h, g.stepArray, false);
                                 e.wireArray.push(wire);
                                 h.wireArray.push(wire)
