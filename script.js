@@ -16,7 +16,8 @@ var mouse = {
     drawingGate: undefined,
     rightDown: false,
     isMoving: undefined,
-    stepArray: []
+    stepArray: [],
+    drawingDisplay:undefined
 };
 
 window.addEventListener("resize", resize);
@@ -147,6 +148,7 @@ window.onbeforeunload = saveData;
 
 var saveButton = undefined;
 var clearButton = undefined;
+var displayButton = undefined;
 
 function saveData() {
     localStorage.setItem("gates", JSON.stringify(gates))
@@ -339,6 +341,10 @@ function init() {
             gateArray = [];
         }
     });
+    displayButton = new Button('canvas.width - 360', 10, 100, 30, "7SEG", function(){
+        mouse.drawingDisplay = true;
+    });
+
 };
 
 async function save() {
@@ -378,6 +384,7 @@ async function save() {
 function render() {
     saveButton.visible = true;
     clearButton.visible = true;
+    displayButton.visible = true;
     gates.forEach(e => e.button.visible = true)
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.fillStyle = "gray"
@@ -395,7 +402,7 @@ function render() {
             })
             c.lineTo(mouse.x, mouse.y);
             c.stroke();
-        } else {
+        } else{
             if (mouse.x < 100) {
                 if (inputArray.filter(e => detectCollision(10, e.y - 50 / 2, 25, 50, 10, mouse.y - 50, 25, 50)).length == 0) {
                     c.fillRect(10, mouse.y - 50 / 2, 25, 50);
@@ -421,16 +428,29 @@ function render() {
                 if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs.length, tableOutputs.length) * 15)).length == 0) {
                     c.fillStyle = "black"
                     c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
-
-                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
                     if (mouse.down) {
                         mouse.down = false;
                         gateArray.push(new Gate(mouse.x - 25 / 2, mouse.y - 50 / 2, mouse.drawingGate));
                         mouse.drawingGate = false;
                     };
                 };
-            };
-        };
+            }else if(mouse.drawingDisplay){
+                let tableInputs = [2, 2]
+                let tableOutputs = [2, 2]
+                c.fillStyle = "gray"
+                c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+    
+                if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs.length, tableOutputs.length) * 15)).length == 0) {
+                    c.fillStyle = "black"
+                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+                    if (mouse.down) {
+                        mouse.down = false;
+                        gateArray.push(new Display(mouse.x - 25 / 2, mouse.y - 50 / 2));
+                        mouse.drawingDisplay = false;
+                    };
+                };
+            };;
+        }
     };
 };
 
@@ -562,6 +582,81 @@ class Output {
             }
         }
         c.fillRect(canvas.width - 20 - 25, this.y, 25, 50);
+    }
+}
+
+class Display{
+    constructor(x,y){
+        this.x = x;
+        this.y = y;
+        this.inputs = [];
+        for (let i = 0; i < 8; i++) {
+            this.inputs.push(new WireConnector(this.x - 30, this.y + (((8 * 30) / 8) - 20) / 2 + (8 * 30) / 8 * i, false))
+        };
+        this.outputs = [0,0,0,0,0,0,0,0]
+
+    }
+    update(){
+        this.hover = detectCollision(this.x, this.y, 160, Math.max(this.inputs.length, this.outputs.length) * 30, mouse.x, mouse.y, 1, 1)
+        if(this.hover){
+            if (mouse.rightDown) {
+                this.inputs.forEach(g => { g.wireArray.forEach(e => e.remove()) })
+                gateArray.splice(gateArray.indexOf(this), 1);
+            }
+            if (mouse.down && mouse.isMoving == undefined || mouse.down && mouse.isMoving == this) {
+                
+                mouse.isMoving = this;
+                let self = this;
+                if (gateArray.filter(e => e !== self && detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(this.inputAmount, this.outputAmount) * 15)).length == 0) {
+                    this.x = mouse.x - 160 / 2;
+                    this.y = mouse.y - 240 / 2;
+                    for (let i = 0; i < 8; i++) {
+                        this.inputs[i].x = this.x - 30
+                        this.inputs[i].y = this.y + (((8 * 30) / 8) - 20) / 2 + (8 * 30) / 8 * i
+                    };
+                }
+            } else if (mouse.isMoving === this) {
+                mouse.isMoving = undefined;
+                mouse.down = false;
+            }
+        }
+        this.draw();
+        this.inputs.forEach(e => e.update())
+        
+    }
+    draw(){
+        if (this.hover) {
+            c.strokeStyle = "gray";
+        } else {
+            c.strokeStyle = "black";
+        }
+        c.lineWidth = 5
+        c.strokeRect(this.x, this.y, 160, Math.max(this.inputs.length, this.outputs.length) * 30)
+        c.fillStyle = this.inputs[0].on ? "black" : "gray"
+        c.fillRect(this.x+40,this.y+20,100,10)
+
+        c.fillStyle = this.inputs[1].on ? "black" : "gray"
+        c.fillRect(this.x+130,this.y+20,10,110)
+        
+        c.fillStyle = this.inputs[2].on ? "black" : "gray"
+        c.fillRect(this.x+130,this.y+100,10,110)
+        
+        c.fillStyle = this.inputs[3].on ? "black" : "gray"
+        c.fillRect(this.x+40,this.y+20+190,100,10)
+        
+        c.fillStyle = this.inputs[4].on ? "black" : "gray"
+        c.fillRect(this.x+40,this.y+100,10,110)
+        
+        c.fillStyle = this.inputs[5].on ? "black" : "gray"
+        c.fillRect(this.x+40,this.y+20,10,110)
+        
+        c.fillStyle = this.inputs[6].on ? "black" : "gray"
+        c.fillRect(this.x+40,this.y+20+95,100,10)
+        
+        c.fillStyle = this.inputs[7].on ? "black" : "gray"
+        c.fillRect(this.x+5,this.y+120,30,10)
+
+
     }
 }
 
