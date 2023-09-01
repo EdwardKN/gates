@@ -299,7 +299,7 @@ async function loadGate(i) {
                     await new Promise(resolve => setTimeout(resolve, 10));
                     outputArray.forEach(async function (h) {
                         if (g.to.y == h.wireConnector.y) {
-                            g.stepArray = []
+                            g.stepArray = [{ x: a.x, y: a.y }, { x: h.wireConnector.x, y: h.wireConnector.y }]
                             let wire = new Wire(a, h.wireConnector, g.stepArray);
                             a.wireArray.push(wire);
                             h.wireConnector.wireArray.push(wire)
