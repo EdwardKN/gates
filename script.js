@@ -151,6 +151,7 @@ var clearButton = undefined;
 var displayButton = undefined;
 
 function saveData() {
+    localStorage.clear();
     localStorage.setItem("gates", JSON.stringify(gates))
 }
 function loadData() {
@@ -602,17 +603,17 @@ class Output {
 }
 
 class Display {
-    constructor(x, y,visualOnly) {
+    constructor(x, y, visualOnly) {
         this.x = x;
         this.y = y;
         this.visualOnly = visualOnly;
         this.inputs = [];
-        
+
         for (let i = 0; i < 8; i++) {
-            if(!this.visualOnly) {
+            if (!this.visualOnly) {
                 this.inputs.push(new WireConnector(this.x - 30, this.y + (((8 * 30) / 8) - 20) / 2 + (8 * 30) / 8 * i, false))
-            }else{
-                this.inputs.push({on:false})
+            } else {
+                this.inputs.push({ on: false })
             }
         };
         this.outputs = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -620,7 +621,7 @@ class Display {
 
     }
     update() {
-        if(!this.visualOnly){
+        if (!this.visualOnly) {
             this.hover = detectCollision(this.x, this.y, 160, Math.max(this.inputs.length, this.outputs.length) * 30, mouse.x, mouse.y, 1, 1)
             if (this.hover) {
                 if (mouse.rightDown) {
@@ -628,7 +629,7 @@ class Display {
                     gateArray.splice(gateArray.indexOf(this), 1);
                 }
                 if (mouse.down && mouse.isMoving == undefined || mouse.down && mouse.isMoving == this) {
-    
+
                     mouse.isMoving = this;
                     let self = this;
                     if (gateArray.filter(e => e !== self && detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(this.inputAmount, this.outputAmount) * 15)).length == 0) {
@@ -646,7 +647,7 @@ class Display {
             }
             this.inputs.forEach(e => e.update())
         }
-        
+
         this.draw();
 
     }
@@ -696,7 +697,7 @@ class Gate {
 
         this.hover = false;
         this.inputs = [];
-        this.outputs =[]
+        this.outputs = []
         this.inputConnectors = [];
         this.outputConnectors = [];
         this.insideGates = [];
@@ -732,18 +733,18 @@ class Gate {
             for (let i = 0; i < JSON.parse(values.gate).length; i++) {
                 if (gateArray[i].name) {
                     this.insideGates.push(new Gate(gateArray[i].x - 10000, gateArray[i].y - 10000, gates[gates.map(e => e.name).indexOf(JSON.parse(values.gate)[i].name)]))
-                }else if(gateArray[i].type == "disp"){
-                    this.displays.push(new Display(this.x + i*160,this.y,true))
+                } else if (gateArray[i].type == "disp") {
+                    this.displays.push(new Display(this.x + i * 160, this.y, true))
                     this.insideGates.push(new Display(gateArray[i].x - 10000, gateArray[i].y - 10000))
                 }
             }
             let self = this;
             this.insideGates.forEach(e => {
-                if(e.displays == undefined){
+                if (e.displays == undefined) {
                     e.displays = []
                 };
-                e.displays.forEach((g,i) => {
-                    this.displays.push(new Display(self.x + i*160,self.y,true))
+                e.displays.forEach((g, i) => {
+                    this.displays.push(new Display(self.x + i * 160, self.y, true))
                 })
             })
 
@@ -757,10 +758,10 @@ class Gate {
             this.outputs = [];
             this.outputConnectors = [];
             for (let i = 0; i < this.outputAmount; i++) {
-                this.outputs.push(new WireConnector(this.x + 15 + Math.max(100,this.displays.length*160), this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i, true))
+                this.outputs.push(new WireConnector(this.x + 15 + Math.max(100, this.displays.length * 160), this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i, true))
                 this.outputConnectors.push(new WireConnector(outputArray[i].wireConnector.x - 10000, outputArray[i].wireConnector.y - 10000, true))
             };
-            
+
 
             let wireArray = JSON.parse(values.wires);
             wireArray = wireArray.map(e => JSON.parse(e))
@@ -821,7 +822,7 @@ class Gate {
 
     }
     update() {
-        this.hover = detectCollision(this.x, this.y, Math.max(100,this.displays.length*160), Math.max(Math.max(this.inputs.length, this.outputs.length) * 30,this.displays.length ? 30*8 : 0), mouse.x, mouse.y, 1, 1)
+        this.hover = detectCollision(this.x, this.y, Math.max(100, this.displays.length * 160), Math.max(Math.max(this.inputs.length, this.outputs.length) * 30, this.displays.length ? 30 * 8 : 0), mouse.x, mouse.y, 1, 1)
         if (mouse.isMoving === this) {
             this.hover = true;
         }
@@ -843,11 +844,11 @@ class Gate {
                         this.inputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.inputAmount * i
                     };
                     for (let i = 0; i < this.outputAmount; i++) {
-                        this.outputs[i].x = this.x + 15 + Math.max(100,this.displays.length*160)
+                        this.outputs[i].x = this.x + 15 + Math.max(100, this.displays.length * 160)
                         this.outputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i
                     };
                     for (let i = 0; i < this.displays.length; i++) {
-                        this.displays[i].x = this.x + 160*i
+                        this.displays[i].x = this.x + 160 * i
                         this.displays[i].y = this.y;
                     };
                 }
@@ -885,15 +886,15 @@ class Gate {
         this.displays.forEach(function (e, i) {
             e.update();
         });
-        this.insideGates.filter(e => e.type == "disp").forEach((e,i,a) => {
-            e.inputs.forEach((g,h) => {
-                self.displays[a.length-i-1].inputs[h].on = g.on;
+        this.insideGates.filter(e => e.type == "disp").forEach((e, i, a) => {
+            e.inputs.forEach((g, h) => {
+                self.displays[a.length - i - 1].inputs[h].on = g.on;
             })
         })
         this.insideGates.forEach((e) => {
-            if(e.displays.length){
-                e.displays.forEach((g,b) => {
-                    g.inputs.forEach((h,i) =>{
+            if (e.displays.length) {
+                e.displays.forEach((g, b) => {
+                    g.inputs.forEach((h, i) => {
                         self.displays[b].inputs[i].on = h.on;
                     })
                 })
@@ -912,11 +913,11 @@ class Gate {
             c.strokeStyle = "black";
         }
         c.lineWidth = 5
-        c.strokeRect(this.x, this.y, Math.max(100,this.displays.length*160), Math.max(Math.max(this.inputs.length, this.outputs.length) * 30,this.displays.length ? 30*8 : 0))
+        c.strokeRect(this.x, this.y, Math.max(100, this.displays.length * 160), Math.max(Math.max(this.inputs.length, this.outputs.length) * 30, this.displays.length ? 30 * 8 : 0))
         c.fillStyle = "black";
         c.font = "28px serif";
         c.textAlign = "center";
-        if(this.displays.length == 0){
+        if (this.displays.length == 0) {
             c.fillText(this.name, this.x + 100 / 2, this.y + Math.max(this.inputs.length, this.outputs.length) * 15 + 10)
         }
     };
