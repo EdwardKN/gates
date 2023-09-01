@@ -481,6 +481,12 @@ class Button {
         this.visible = false;
         this.text = text;
         this.x = this.xValue;
+        if (!this.onRightClick) {
+            this.onRightClick = function () { }
+        }
+        if (!this.onClick) {
+            this.onClick = function () { }
+        }
 
         buttons.push(this);
     }
