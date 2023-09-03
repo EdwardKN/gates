@@ -160,6 +160,13 @@ function loadData() {
     }
     init();
 }
+function download(content, fileName, contentType) {
+    var a = document.createElement("a");
+    var file = new Blob([content], { type: contentType });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+}
 function saveCurrentGates(l) {
     let inputArrayValues = JSON.prune(inputArray)
     let outputArrayValues = JSON.prune(outputArray)
@@ -324,6 +331,7 @@ function update() {
     gateArray.forEach(e => e.update());
 
 };
+var fileReader;
 
 function init() {
     gates.forEach(function (e, i) {
@@ -344,15 +352,33 @@ function init() {
             }
         });
     });
-    saveButton = new Button('canvas.width - 120', 10, 100, 30, "SAVE", save);
-    clearButton = new Button('canvas.width - 240', 10, 100, 30, "CLEAR", function () {
+    downloadButton = new Button('canvas.width - 140', 10, 120, 30, "Download", function () {
+        download(JSON.stringify(gates), "gates.json", 'text/plain')
+    });
+    loadButton = new Button('canvas.width - 260', 10, 100, 30, "Upload", function () {
+        fileReader = document.createElement('input');
+        fileReader.type = 'file';
+        fileReader.accept = '.json';
+        fileReader.click();
+        fileReader.addEventListener('change', function (e) {
+            let file = fileReader.files[0]
+            let tmp = new FileReader();
+            tmp.readAsText(file);
+            tmp.onload = function () {
+                gates = JSON.parse(tmp.result)
+                init();
+            };
+        })
+    });
+    saveButton = new Button('canvas.width - 380', 10, 100, 30, "SAVE", save);
+    clearButton = new Button('canvas.width - 500', 10, 100, 30, "CLEAR", function () {
         if (confirm("Are you sure you would like to clear?")) {
             inputArray = [];
             outputArray = [];
             gateArray = [];
         }
     });
-    displayButton = new Button('canvas.width - 360', 10, 100, 30, "7SEG", function () {
+    displayButton = new Button('canvas.width - 620', 10, 100, 30, "7SEG", function () {
         mouse.drawingDisplay = true;
     });
 
@@ -395,6 +421,8 @@ async function save() {
 function render() {
     saveButton.visible = true;
     clearButton.visible = true;
+    loadButton.visible = true;
+    downloadButton.visible = true;
     displayButton.visible = true;
     gates.forEach(e => e.button.visible = true)
     c.clearRect(0, 0, canvas.width, canvas.height);
@@ -733,11 +761,13 @@ class Gate {
             for (let i = 0; i < JSON.parse(values.gate).length; i++) {
                 if (gateArray[i].name) {
                     this.insideGates.push(new Gate(gateArray[i].x - 10000, gateArray[i].y - 10000, gates[gates.map(e => e.name).indexOf(JSON.parse(values.gate)[i].name)]))
-                } else if (gateArray[i].type == "disp") {
-                    this.displays.push(new Display(this.x + i * 160, this.y, true))
-                    this.insideGates.push(new Display(gateArray[i].x - 10000, gateArray[i].y - 10000))
                 }
             }
+            for (let i = 0; i < gateArray.filter(e => e.type == "disp").length; i++) {
+                this.displays.push(new Display(this.x + i * 160, this.y, true))
+                this.insideGates.push(new Display(gateArray.filter(e => e.type == "disp")[i].x - 10000, gateArray.filter(e => e.type == "disp")[i].y - 10000))
+            }
+
             let self = this;
             this.insideGates.forEach(e => {
                 if (e.displays == undefined) {
@@ -747,7 +777,10 @@ class Gate {
                     this.displays.push(new Display(self.x + i * 160, self.y, true))
                 })
             })
-
+            for (let i = 0; i < this.displays.length; i++) {
+                this.displays[i].x = this.x - 160 * i + (this.displays.length - 1) * 160;
+                this.displays[i].y = this.y;
+            };
             this.inputs = [];
             this.inputConnectors = [];
             for (let i = 0; i < this.inputAmount; i++) {
@@ -848,7 +881,7 @@ class Gate {
                         this.outputs[i].y = this.y + (((Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount) - 20) / 2 + (Math.max(this.inputAmount, this.outputAmount) * 30) / this.outputAmount * i
                     };
                     for (let i = 0; i < this.displays.length; i++) {
-                        this.displays[i].x = this.x + 160 * i
+                        this.displays[i].x = this.x - 160 * i + (this.displays.length - 1) * 160;
                         this.displays[i].y = this.y;
                     };
                 }
@@ -891,11 +924,14 @@ class Gate {
                 self.displays[a.length - i - 1].inputs[h].on = g.on;
             })
         })
-        this.insideGates.forEach((e) => {
+        let dispAmount = 0;
+        this.insideGates.forEach((e, d) => {
             if (e.displays.length) {
                 e.displays.forEach((g, b) => {
+                    dispAmount++;
                     g.inputs.forEach((h, i) => {
-                        self.displays[b].inputs[i].on = h.on;
+
+                        self.displays[dispAmount - 1].inputs[i].on = h.on;
                     })
                 })
             }
