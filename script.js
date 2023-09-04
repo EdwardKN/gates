@@ -434,37 +434,57 @@ function init() {
 };
 
 async function save() {
-    /*
-    let save = {}
+    if (confirm("Would you like to use simple or advanced saving?")) {
 
-    for (let i = 0; i < Math.pow(2, inputArray.length); i++) {
-        let id = (i >>> 0).toString(2)
-        id = '0'.repeat(inputArray.length - id.length) + id
-        let inputs = id.split('')
+        let save = {}
 
-        for (let j = 0; j < inputs.length; j++) {
-            inputArray[j].on = inputs[j] === '1'
+        for (let i = 0; i < Math.pow(2, inputArray.length); i++) {
+            let id = (i >>> 0).toString(2)
+            id = '0'.repeat(inputArray.length - id.length) + id
+            let inputs = id.split('')
+
+            for (let j = 0; j < inputs.length; j++) {
+                inputArray[j].on = inputs[j] === '1'
+            }
+            await new Promise(resolve => setTimeout(resolve, 50 * gateArray.length))
+            let result = ''
+            outputArray.forEach(output => result += output.on ? 1 : 0)
+            save[id] = result
         }
-        await new Promise(resolve => setTimeout(resolve, 50 * gateArray.length))
-        let result = ''
-        outputArray.forEach(output => result += output.on ? 1 : 0)
-        save[id] = result
-    }*/
-    let name = "";
-    while (name === "" || name === "NOT" || name === "AND" || name.length > 12) {
-        name = prompt("Name of component: ", name)
-    }
-    if (gates.filter(e => e.name == name).length !== 1) {
-        gates.push({ name: name })
-        init()
-        saveCurrentGates(gates.length - 1);
+        let name = "";
+        while (name === "" || name === "NOT" || name === "AND" || name.length > 12) {
+            name = prompt("Name of component: ", name)
+        }
+        if (gates.filter(e => e.name == name).length !== 1) {
+            gates.push({ name: name, table: save })
+            init()
+            saveCurrentGates(gates.length - 1);
+        } else {
+            let index = gates.map(e => e.name).indexOf(name);
+            gates[index] = ({ name: name, table: save })
+            init()
+            saveCurrentGates(index);
+        }
+        clearButton.onClick();
     } else {
-        let index = gates.map(e => e.name).indexOf(name);
-        gates[index] = ({ name: name })
-        init()
-        saveCurrentGates(index);
+        let name = "";
+        while (name === "" || name === "NOT" || name === "AND" || name.length > 12) {
+            name = prompt("Name of component: ", name)
+        }
+        if (gates.filter(e => e.name == name).length !== 1) {
+            gates.push({ name: name })
+            init()
+            saveCurrentGates(gates.length - 1);
+        } else {
+            let index = gates.map(e => e.name).indexOf(name);
+            gates[index] = ({ name: name })
+            init()
+            saveCurrentGates(index);
+        }
+        clearButton.onClick();
     }
-    clearButton.onClick();
+
+
 }
 
 function render() {
@@ -605,7 +625,6 @@ class Button {
         c.fillStyle = "white";
         let fontsize = (1 / this.textsize.width) * 10000 > 28 ? 28 : (1 / this.textsize.width) * 10000
         c.font = fontsize + "px serif";
-        console.log(fontsize)
         c.textAlign = "center";
         c.fillText(this.text, this.x + this.w / 2, this.y + this.h - 5)
     };
