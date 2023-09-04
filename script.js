@@ -54,6 +54,7 @@ window.addEventListener("keydown", function (e) {
     if (e.keyCode === 27) {
         mouse.drawingWireFrom = undefined;
         mouse.drawingGate = undefined;
+        mouse.drawingDisplay = undefined;
     }
 })
 
@@ -150,9 +151,13 @@ var saveButton = undefined;
 var clearButton = undefined;
 var displayButton = undefined;
 
-function saveData() {
-    localStorage.clear();
-    localStorage.setItem("gates", JSON.stringify(gates))
+async function saveData() {
+    if (JSON.stringify(localStorage).length > 4500000) {
+
+    } else {
+        localStorage.clear();
+        localStorage.setItem("gates", JSON.stringify(gates))
+    }
 }
 function loadData() {
     if (JSON.parse(localStorage.getItem("gates"))) {
