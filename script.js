@@ -172,6 +172,47 @@ function download(content, fileName, contentType) {
     a.download = fileName;
     a.click();
 }
+const measureText = (() => {
+    var data, w, size = 120; // for higher accuracy increase this size in pixels.
+    const isColumnEmpty = x => {
+        var idx = x, h = size * 2;
+        while (h--) {
+            if (data[idx]) { return false }
+            idx += can.width;
+        }
+        return true;
+    }
+    const can = document.createElement("canvas");
+    const ctx = can.getContext("2d");
+    return ({ text, font, baseSize = size }) => {
+        size = baseSize;
+        can.height = size * 2;
+        font = size + "px " + font;
+        if (text.trim() === "") { return }
+        ctx.font = font;
+        can.width = (w = ctx.measureText(text).width) + 8;
+        ctx.font = font;
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "left";
+        ctx.fillText(text, 0, size);
+        data = new Uint32Array(ctx.getImageData(0, 0, can.width, can.height).data.buffer);
+        var left, right;
+        var lIdx = 0, rIdx = can.width - 1;
+        while (lIdx < rIdx) {
+            if (left === undefined && !isColumnEmpty(lIdx)) { left = lIdx }
+            if (right === undefined && !isColumnEmpty(rIdx)) { right = rIdx }
+            if (right !== undefined && left !== undefined) { break }
+            lIdx += 1;
+            rIdx -= 1;
+        }
+        data = undefined; // release RAM held
+        can.width = 1; // release RAM held
+        return right - left >= 1 ? {
+            left, right, rightOffset: w - right, width: right - left,
+            measuredWidth: w, font, baseSize
+        } : undefined;
+    }
+})();
 function saveCurrentGates(l) {
     let inputArrayValues = JSON.prune(inputArray)
     let outputArrayValues = JSON.prune(outputArray)
@@ -212,6 +253,9 @@ function saveCurrentGates(l) {
             putSearches(e.wireConnector);
         }
     }
+
+
+
     inputArray.forEach(e => searchForWire(e))
     outputArray.forEach(e => searchForWire(e))
     gateArray.forEach(e => searchForWire(e))
@@ -407,7 +451,7 @@ async function save() {
         save[id] = result
     }*/
     let name = "";
-    while (name === "" || name === "NOT" || name === "AND" || name.length > 7) {
+    while (name === "" || name === "NOT" || name === "AND" || name.length > 12) {
         name = prompt("Name of component: ", name)
     }
     if (gates.filter(e => e.name == name).length !== 1) {
@@ -514,6 +558,8 @@ class Button {
         this.onRightClick = onRightClick;
         this.visible = false;
         this.text = text;
+        this.textsize = measureText({ font: "serif", text: text });
+
         this.x = this.xValue;
         if (!this.onRightClick) {
             this.onRightClick = function () { }
@@ -557,7 +603,9 @@ class Button {
         c.strokeRect(this.x, this.y, this.w, this.h)
 
         c.fillStyle = "white";
-        c.font = "28px serif";
+        let fontsize = (1 / this.textsize.width) * 10000 > 28 ? 28 : (1 / this.textsize.width) * 10000
+        c.font = fontsize + "px serif";
+        console.log(fontsize)
         c.textAlign = "center";
         c.fillText(this.text, this.x + this.w / 2, this.y + this.h - 5)
     };
