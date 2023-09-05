@@ -497,6 +497,7 @@ function render() {
     c.clearRect(0, 0, canvas.width, canvas.height);
     c.fillStyle = "gray"
     c.fillRect(0, 0, canvas.width, 50)
+
     if (mouse.y > 75 && mouse.isMoving == undefined) {
         if (mouse.drawingWireFrom) {
             if (mouse.down) {
@@ -528,17 +529,17 @@ function render() {
                     };
                 };
             } else if (mouse.drawingGate) {
-                let tableInputs = [2, 2]
-                let tableOutputs = [2, 2]
+                let tableInputs = 2;
+                let tableOutputs = 2;
                 c.fillStyle = "gray"
-                c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+                c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs, tableOutputs) * 15);
 
-                if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs.length, tableOutputs.length) * 15)).length == 0) {
+                if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs, tableOutputs) * 15)).length == 0) {
                     c.fillStyle = "black"
-                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+                    c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs, tableOutputs) * 15);
                     if (mouse.down) {
                         mouse.down = false;
-                        gateArray.push(new Gate(mouse.x - 25 / 2, mouse.y - 50 / 2, mouse.drawingGate));
+                        gateArray.push(new Gate(mouse.x - 100 / 2, mouse.y - 50 / 2, mouse.drawingGate));
                         mouse.drawingGate = false;
                     };
                 };
@@ -546,14 +547,14 @@ function render() {
                 let tableInputs = [2, 2]
                 let tableOutputs = [2, 2]
                 c.fillStyle = "gray"
-                c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+                c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
 
                 if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs.length, tableOutputs.length) * 15)).length == 0) {
                     c.fillStyle = "black"
-                    c.fillRect(mouse.x - 25 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+                    c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
                     if (mouse.down) {
                         mouse.down = false;
-                        gateArray.push(new Display(mouse.x - 25 / 2, mouse.y - 50 / 2));
+                        gateArray.push(new Display(mouse.x - 100 / 2, mouse.y - 50 / 2));
                         mouse.drawingDisplay = false;
                     };
                 };
