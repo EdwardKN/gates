@@ -529,14 +529,21 @@ function render() {
                     };
                 };
             } else if (mouse.drawingGate) {
-                let tableInputs = 2;
-                let tableOutputs = 2;
-                c.fillStyle = "gray"
-                c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs, tableOutputs) * 15);
+                let tableInputs, tableOutputs;
+                if (mouse.drawingGate.values) {
+                    tableInputs = JSON.parse(mouse.drawingGate.values.input).length;
+                    tableOutputs = JSON.parse(mouse.drawingGate.values.output).length;
+                } else {
+                    tableInputs = (Object.keys(mouse.drawingGate.table)[0].length);
+                    tableOutputs = (Object.values(mouse.drawingGate.table)[0].length);
+                }
 
-                if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs, tableOutputs) * 15)).length == 0) {
+                c.fillStyle = "gray"
+                c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs, tableOutputs) * 30);
+
+                if (gateArray.filter(e => detectCollision(e.x - 30, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs, tableOutputs) * 30)).length == 0) {
                     c.fillStyle = "black"
-                    c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs, tableOutputs) * 15);
+                    c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs, tableOutputs) * 30);
                     if (mouse.down) {
                         mouse.down = false;
                         gateArray.push(new Gate(mouse.x - 100 / 2, mouse.y - 50 / 2, mouse.drawingGate));
@@ -544,17 +551,17 @@ function render() {
                     };
                 };
             } else if (mouse.drawingDisplay) {
-                let tableInputs = [2, 2]
-                let tableOutputs = [2, 2]
+                let tableInputs = 8;
+                let tableOutputs = 8;
                 c.fillStyle = "gray"
-                c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+                c.fillRect(mouse.x - 160 / 2, mouse.y - 240 / 2, 160, Math.max(tableInputs, tableOutputs) * 30);
 
-                if (gateArray.filter(e => detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(tableInputs.length, tableOutputs.length) * 15)).length == 0) {
+                if (gateArray.filter(e => detectCollision(e.x - 30, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 240 / 2, 200, Math.max(tableInputs, tableOutputs) * 30)).length == 0) {
                     c.fillStyle = "black"
-                    c.fillRect(mouse.x - 100 / 2, mouse.y - 50 / 2, 100, Math.max(tableInputs.length, tableOutputs.length) * 15);
+                    c.fillRect(mouse.x - 160 / 2, mouse.y - 240 / 2, 160, Math.max(tableInputs, tableOutputs) * 30);
                     if (mouse.down) {
                         mouse.down = false;
-                        gateArray.push(new Display(mouse.x - 100 / 2, mouse.y - 50 / 2));
+                        gateArray.push(new Display(mouse.x - 160 / 2, mouse.y - 240 / 2));
                         mouse.drawingDisplay = false;
                     };
                 };
@@ -733,7 +740,7 @@ class Display {
 
                     mouse.isMoving = this;
                     let self = this;
-                    if (gateArray.filter(e => e !== self && detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(this.inputAmount, this.outputAmount) * 15)).length == 0) {
+                    if (gateArray.filter(e => e !== self && detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 340 / 2, mouse.y - 240 / 2, 240, 8 * 30)).length == 0) {
                         this.x = mouse.x - 160 / 2;
                         this.y = mouse.y - 240 / 2;
                         for (let i = 0; i < 8; i++) {
@@ -942,7 +949,7 @@ class Gate {
 
                 mouse.isMoving = this;
                 let self = this;
-                if (gateArray.filter(e => e !== self && detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(this.inputAmount, this.outputAmount) * 15)).length == 0) {
+                if (gateArray.filter(e => e !== self && detectCollision(e.x - 60, e.y, 150, Math.max(e.inputs.length, e.outputs.length) * 30, mouse.x - 200 / 2, mouse.y - 50 / 2, 200, Math.max(this.inputAmount, this.outputAmount) * 30)).length == 0) {
                     this.x = mouse.x - 25 / 2;
                     this.y = mouse.y - 50 / 2;
                     for (let i = 0; i < this.inputAmount; i++) {
