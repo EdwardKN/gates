@@ -446,7 +446,7 @@ async function save() {
             for (let j = 0; j < inputs.length; j++) {
                 inputArray[j].on = inputs[j] === '1'
             }
-            await new Promise(resolve => setTimeout(resolve, 50 * gateArray.length))
+            await new Promise(resolve => setTimeout(resolve, 25 * gateArray.length))
             let result = ''
             outputArray.forEach(output => result += output.on ? 1 : 0)
             save[id] = result
