@@ -127,19 +127,12 @@ function lineCircleCollide(a, b, circle, radius, nearest) {
 
 var gates = [
     {
-        name: "NOT",
+        name: "NAND",
         table: {
-            '0': '1',
-            '1': '0'
-        }
-    },
-    {
-        name: "AND",
-        table: {
-            '00': '0',
-            '01': '0',
-            '10': '0',
-            '11': '1'
+            '00': '1',
+            '01': '1',
+            '10': '1',
+            '11': '0'
         }
     }
 ]
