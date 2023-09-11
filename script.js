@@ -380,7 +380,7 @@ function init() {
         e.button = new Button(10 + 110 * i, 10, 100, 30, e.name, function () {
             mouse.drawingGate = e;
         }, function () {
-            if (i > 1) {
+            if (i !== 0) {
                 mouse.rightDown = false;
                 if (confirm("Would you like to edit this component?")) {
                     loadGate(i)
@@ -445,7 +445,7 @@ async function save() {
             save[id] = result
         }
         let name = "";
-        while (name === "" || name === "NOT" || name === "AND" || name.length > 12) {
+        while (name === "" || name === "NAND" || name.length > 12) {
             name = prompt("Name of component: ", name)
         }
         if (gates.filter(e => e.name == name).length !== 1) {
@@ -461,7 +461,7 @@ async function save() {
         clearButton.onClick();
     } else {
         let name = "";
-        while (name === "" || name === "NOT" || name === "AND" || name.length > 12) {
+        while (name === "" || name === "NAND" || name.length > 12) {
             name = prompt("Name of component: ", name)
         }
         if (gates.filter(e => e.name == name).length !== 1) {
